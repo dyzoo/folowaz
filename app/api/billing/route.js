@@ -11,5 +11,9 @@ export async function GET() {
     sql`select * from public.orders where user_id = ${user.id}::uuid order by created_at desc limit 10`,
   ]);
 
-  return NextResponse.json({ subscription: subscription[0] || null, orders });
+  return NextResponse.json({
+    user: { full_name: user.full_name, email: user.email },
+    subscription: subscription[0] || null,
+    orders,
+  });
 }

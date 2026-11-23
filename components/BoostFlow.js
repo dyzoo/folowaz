@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft, ArrowRight, AtSign, Briefcase, Camera, Check, CheckCircle2, Globe,
+  ArrowLeft, ArrowRight, AtSign, Briefcase, Camera, Check, CheckCircle2, CreditCard, Globe,
   Loader2, Music2, Package, Phone, Play, ShieldCheck, Smartphone, Star, Users, Zap,
 } from "lucide-react";
 
@@ -54,6 +54,9 @@ export default function BoostFlow() {
   const [username, setUsername] = useState("");
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [phone, setPhone] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("mobile");
+  const [cardName, setCardName] = useState("");
+  const [cardEmail, setCardEmail] = useState("");
   const [checking, setChecking] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [reference, setReference] = useState("");
@@ -75,9 +78,10 @@ export default function BoostFlow() {
   const submitPayment = (event) => {
     event.preventDefault();
     if (phone.trim().length < 9) return;
+    if (paymentMethod === "card" && (!cardName.trim() || !cardEmail.includes("@"))) return;
     setProcessing(true);
     timer.current = setTimeout(() => {
-      setReference(`FLW-${Date.now().toString().slice(-6)}`);
+      setReference(`NR-${Date.now().toString().slice(-6)}`);
       setProcessing(false);
       setStep(5);
     }, 1700);
@@ -89,6 +93,9 @@ export default function BoostFlow() {
     setUsername("");
     setSelectedPackage(null);
     setPhone("");
+    setPaymentMethod("mobile");
+    setCardName("");
+    setCardEmail("");
     setReference("");
   };
 
@@ -130,7 +137,7 @@ export default function BoostFlow() {
             <div className="section-head center clone-intro">
               <div className="pill pill-soft"><Star size={13} fill="currentColor" className="pill-star" /> 4.98/5 · 58,000+ checks</div>
               <h1>Boost any social account with <span className="gradient-text">smart growth</span>.</h1>
-              <p>Choose your network, check your username, pick a package, and enter your phone number for payment. No sign in or sign up needed.</p>
+              <p>Choose your network, check your username, pick a package, then pay with mobile money or card. No sign in or sign up needed.</p>
               <div className="clone-trust">
                 <span><ShieldCheck size={14} /> No password needed</span>
                 <span><Zap size={14} /> Instant simulation</span>
@@ -267,14 +274,24 @@ export default function BoostFlow() {
                     <button type="button" className="back-link" onClick={back}><ArrowLeft size={15} /> Change package</button>
                     <div className="boost-card-head">
                       <span className="step-kicker">Step 4 of 4</span>
-                      <h2>Enter your phone number</h2>
-                      <p>Your payment request will be prepared for the selected package.</p>
+                      <h2>Choose how to pay</h2>
+                      <p>Mobile money sends a prompt to your phone. Card payment opens a secure NORIPESA checkout.</p>
                     </div>
                     <div className="panel clone-order">
                       <div><span>Platform</span><strong>{platform?.name}</strong></div>
                       <div><span>Username</span><strong>@{username}</strong></div>
                       <div><span>Package</span><strong>{selectedPackage?.label}</strong></div>
                       <div className="clone-order-total"><span>Amount</span><strong>{selectedPackage?.amount}</strong></div>
+                    </div>
+                    <div className="payment-methods">
+                      <button type="button" className={`payment-method ${paymentMethod === "mobile" ? "selected" : ""}`} onClick={() => setPaymentMethod("mobile")}>
+                        <Smartphone size={22} />
+                        <span><strong>Mobile money</strong><small>M-Pesa, Mixx by Yas, Airtel Money</small></span>
+                      </button>
+                      <button type="button" className={`payment-method ${paymentMethod === "card" ? "selected" : ""}`} onClick={() => setPaymentMethod("card")}>
+                        <CreditCard size={22} />
+                        <span><strong>Kadi</strong><small>Visa / Mastercard, 3-D Secure</small></span>
+                      </button>
                     </div>
                     <form className="clone-form" onSubmit={submitPayment}>
                       <label htmlFor="phone">Phone number for payment</label>
@@ -290,8 +307,34 @@ export default function BoostFlow() {
                           autoFocus
                         />
                       </div>
+                      {paymentMethod === "card" && (
+                        <>
+                          <label htmlFor="card-name">Name on card</label>
+                          <div className="input-wrap clone-input">
+                            <input
+                              id="card-name"
+                              type="text"
+                              value={cardName}
+                              onChange={(event) => setCardName(event.target.value)}
+                              placeholder="Jina kamili"
+                              required
+                            />
+                          </div>
+                          <label htmlFor="card-email">Email for receipt</label>
+                          <div className="input-wrap clone-input">
+                            <input
+                              id="card-email"
+                              type="email"
+                              value={cardEmail}
+                              onChange={(event) => setCardEmail(event.target.value)}
+                              placeholder="jina@mfano.co.tz"
+                              required
+                            />
+                          </div>
+                        </>
+                      )}
                       <button type="submit" className="btn btn-primary btn-lg clone-full-btn" disabled={processing || phone.trim().length < 9}>
-                        {processing ? <><Loader2 size={18} className="spin" /> Preparing payment...</> : <>Continue to payment <ArrowRight size={17} /></>}
+                        {processing ? <><Loader2 size={18} className="spin" /> Preparing payment...</> : paymentMethod === "card" ? "Continue to card checkout" : "Send mobile money prompt"}
                       </button>
                     </form>
                   </>
@@ -303,11 +346,11 @@ export default function BoostFlow() {
                     <div className="guarantee-content">
                       <div className="pill clone-success-pill"><Check size={14} /> Request ready</div>
                       <h2>Payment request prepared</h2>
-                      <p>Your {selectedPackage?.label} boost for <strong>@{username}</strong> on {platform?.name} is ready. Reference: <strong>{reference}</strong>.</p>
+                      <p>Your {selectedPackage?.label} boost for <strong>@{username}</strong> on {platform?.name} is ready via <strong>{paymentMethod === "card" ? "Visa / Mastercard" : "mobile money"}</strong>. Reference: <strong>{reference}</strong>.</p>
                       <div className="clone-success-chips">
                         <span><Check size={14} /> Account checked</span>
                         <span><Check size={14} /> Package selected</span>
-                        <span><Check size={14} /> Phone number received</span>
+                        <span><Check size={14} /> {paymentMethod === "card" ? "Card checkout ready" : "Mobile prompt ready"}</span>
                       </div>
                       <button type="button" className="btn btn-primary btn-lg clone-done-btn" onClick={reset}>
                         Start another request <ArrowRight size={17} />

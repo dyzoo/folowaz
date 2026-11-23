@@ -43,8 +43,7 @@ create table if not exists public.subscriptions (
   user_id uuid not null unique references public.users(id) on delete cascade,
   plan text not null,
   status text not null default 'inactive',
-  stripe_customer_id text,
-  stripe_subscription_id text,
+  noripesa_reference text,
   current_period_end timestamptz,
   created_at timestamptz not null default now()
 );
@@ -52,12 +51,17 @@ create table if not exists public.subscriptions (
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
-  stripe_session_id text unique,
+  merchant_reference text not null unique,
+  noripesa_reference text unique,
+  payment_method text not null default 'mobile',
+  phone text,
+  checkout_url text,
   plan text not null,
   amount int not null,
-  currency text not null default 'usd',
+  currency text not null default 'TZS',
   status text not null default 'pending',
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.support_tickets (
