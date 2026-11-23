@@ -23,6 +23,7 @@ export default function BillingPage() {
   const [method, setMethod] = useState("mobile");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [checkingReference, setCheckingReference] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -43,6 +44,8 @@ export default function BillingPage() {
       setOrders(data.orders || []);
     } catch {
       setOrders([]);
+    } finally {
+      setInitialLoading(false);
     }
   }, []);
 
@@ -144,7 +147,14 @@ export default function BillingPage() {
       {error && <div className="auth-error">{error}</div>}
       <div className="panel">
         <div className="panel-head"><h3>Mpango wa sasa</h3><span className={`tag ${subscription?.status === "active" ? "green" : "gray"}`}>{subscription?.status || "Hakuna mpango"}</span></div>
-        <p style={{ fontSize: ".9rem" }}>{subscription ? <>{subscription.plan.toUpperCase()} · {subscription.current_period_end ? `hadhi hadi ${new Date(subscription.current_period_end).toLocaleDateString("sw")}` : ""}</> : "Huna mpango unaofanya kazi. Chagua moja hapa chini."}</p>
+        {initialLoading ? (
+          <div className="skeleton-stack">
+            <div className="skeleton skeleton-line tall" />
+            <div className="skeleton skeleton-line short" />
+          </div>
+        ) : (
+          <p style={{ fontSize: ".9rem" }}>{subscription ? <>{subscription.plan.toUpperCase()} · {subscription.current_period_end ? `hadhi hadi ${new Date(subscription.current_period_end).toLocaleDateString("sw")}` : ""}</> : "Huna mpango unaofanya kazi. Chagua moja hapa chini."}</p>
+        )}
       </div>
       <div className="grid-4">
         {planCards.map((plan) => (
@@ -187,7 +197,7 @@ export default function BillingPage() {
           <button type="button" className="btn btn-primary" onClick={pay} disabled={loading || phone.trim().length < 9}>
             {loading ? <><Loader2 size={18} className="spin" /> Inatuma ombi...</> : method === "card" ? "Endelea kwa kadi" : "Tuma ombi la malipo"}
           </button>
-          {checkingReference && <span className="hint">Inakagua hali ya malipo...</span>}
+          {checkingReference && <span className="hint"><Loader2 size={13} className="spin" /> Inakagua hali ya malipo...</span>}
         </div>
       )}
 
@@ -196,16 +206,22 @@ export default function BillingPage() {
         <table className="table">
           <thead><tr><th>Tarehe</th><th>Mpango</th><th>Njia</th><th>Kiasi</th><th>Hali</th></tr></thead>
           <tbody>
-            {orders.map((order) => (
-              <tr key={order.id}>
-                <td>{new Date(order.created_at).toLocaleDateString("sw")}</td>
-                <td>{order.plan}</td>
-                <td>{order.payment_method === "card" ? "Kadi" : "Mobile money"}</td>
-                <td>{formatAmount(order.amount)}</td>
-                <td><span className={`tag ${order.status === "paid" ? "green" : finalStatuses.includes(order.status) ? "red" : "gray"}`}>{order.status}</span></td>
-              </tr>
-            ))}
-            {!orders.length && <tr><td colSpan={5} className="empty-state">Hakuna maagizo bado.</td></tr>}
+            {initialLoading ? (
+              [0, 1, 2].map((index) => <tr key={index}><td colSpan={5}><div className="skeleton skeleton-row" /></td></tr>)
+            ) : (
+              <>
+                {orders.map((order) => (
+                  <tr key={order.id}>
+                    <td>{new Date(order.created_at).toLocaleDateString("sw")}</td>
+                    <td>{order.plan}</td>
+                    <td>{order.payment_method === "card" ? "Kadi" : "Mobile money"}</td>
+                    <td>{formatAmount(order.amount)}</td>
+                    <td><span className={`tag ${order.status === "paid" ? "green" : finalStatuses.includes(order.status) ? "red" : "gray"}`}>{order.status}</span></td>
+                  </tr>
+                ))}
+                {!orders.length && <tr><td colSpan={5} className="empty-state">Hakuna maagizo bado.</td></tr>}
+              </>
+            )}
           </tbody>
         </table>
       </div>

@@ -4,7 +4,7 @@ import "./platform.css";
 export const metadata = {
   title: "Folowaz | Social Media Boost Checker",
   description:
-    "Choose a social network, check your username, select a follower package, and prepare payment in a simple presentation demo.",
+    "Choose a social network, check your username, select a follower package, and pay securely with mobile money or card.",
   icons: { icon: "/favicon.svg" },
 };
 

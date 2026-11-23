@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { isDatabaseConfigured } from "@/lib/env";
 
 export default function LoginPage() {
@@ -19,21 +20,25 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
 
-    if (!response.ok) {
-      setError(data.error || "Imeshindwa kuingia.");
+      if (!response.ok) {
+        setError(data.error || "Imeshindwa kuingia.");
+        return;
+      }
+
+      router.push(nextPath);
+      router.refresh();
+    } catch {
+      setError("Hitilafu ya mtandao. Tafadhali jaribu tena.");
       setLoading(false);
-      return;
     }
-
-    router.push(nextPath);
-    router.refresh();
   }
 
   return (
@@ -47,7 +52,7 @@ export default function LoginPage() {
         <form onSubmit={submit}>
           <div className="field"><label htmlFor="email">Barua pepe</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="wewe@mfano.com" required /></div>
           <div className="field"><label htmlFor="password">Nenosiri</label><input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required /></div>
-          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? "Ingia..." : "Ingia"}</button>
+          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? <><Loader2 size={17} className="spin" /> Ingia...</> : "Ingia"}</button>
         </form>
         <p className="auth-switch">Huna akaunti? <Link href="/signup">Jisajili bure</Link></p>
       </div>

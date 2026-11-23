@@ -1,22 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, AtSign } from "lucide-react";
-import { isDatabaseConfigured } from "@/lib/env";
-import { demoConnection } from "@/lib/demo-data";
+import { ArrowUpRight, AtSign, Loader2 } from "lucide-react";
 
 export default function ConnectPage() {
   const [username, setUsername] = useState("");
-  const [savedName, setSavedName] = useState(isDatabaseConfigured ? null : demoConnection.username);
+  const [savedName, setSavedName] = useState(null);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!isDatabaseConfigured) return;
     async function load() {
-      const response = await fetch("/api/profile");
-      const data = await response.json();
-      setSavedName(data.user?.instagram_username || null);
+      try {
+        const response = await fetch("/api/profile");
+        const data = await response.json();
+        setSavedName(data.user?.instagram_username || null);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);
@@ -28,23 +30,20 @@ export default function ConnectPage() {
     setSaving(true);
     setMessage("");
 
-    if (!isDatabaseConfigured) {
-      setSavedName(clean);
-      setUsername("");
-      setMessage("Jina la akaunti limehifadhiwa (hali ya demo).");
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instagramUsername: clean }),
+      });
+      const data = await response.json();
+      setMessage(response.ok ? "Jina la akaunti limehifadhiwa." : data.error);
+      if (response.ok) { setSavedName(clean); setUsername(""); }
+    } catch {
+      setMessage("Hitilafu ya mtandao. Tafadhali jaribu tena.");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    const response = await fetch("/api/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ instagramUsername: clean }),
-    });
-    const data = await response.json();
-    setMessage(response.ok ? "Jina la akaunti limehifadhiwa." : data.error);
-    if (response.ok) { setSavedName(clean); setUsername(""); }
-    setSaving(false);
   }
 
   return (
@@ -53,7 +52,12 @@ export default function ConnectPage() {
       {message && <div className="auth-success">{message}</div>}
 
       <div className="panel">
-        {savedName ? (
+        {loading ? (
+          <div className="skeleton-stack">
+            <div className="skeleton skeleton-line tall" />
+            <div className="skeleton skeleton-line short" />
+          </div>
+        ) : savedName ? (
           <div className="connect-card">
             <div className="connect-icon"><AtSign size={20} /></div>
             <div>
@@ -75,9 +79,11 @@ export default function ConnectPage() {
           <h3>Weka jina la akaunti</h3>
           <div className="field">
             <label htmlFor="ig-username">Jina la mtumiaji la Instagram</label>
-            <input id="ig-username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="jina-lako-la-instagram" required />
+            <input id="ig-username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="jina-lako-la-instagram" required disabled={saving} />
           </div>
-          <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? "Inahifadhi..." : "Hifadhi jina"}</button>
+          <button className="btn btn-primary" type="submit" disabled={saving || loading}>
+            {saving ? <><Loader2 size={17} className="spin" /> Inahifadhi...</> : "Hifadhi jina"}
+          </button>
           <p className="hint">Hatuhitaji nenosiri lako wala ruhusa ya Meta. Tunatumia jina unaloingiza tu.</p>
         </div>
       </form>

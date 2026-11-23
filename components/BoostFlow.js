@@ -5,6 +5,7 @@ import {
   ArrowLeft, ArrowRight, AtSign, Briefcase, Camera, Check, CheckCircle2, CreditCard, Globe,
   Loader2, Music2, Package, Phone, Play, ShieldCheck, Smartphone, Star, Users, Zap,
 } from "lucide-react";
+import ScrollEffects from "@/components/marketing/ScrollEffects";
 
 const platforms = [
   { id: "instagram", name: "Instagram", icon: Camera, color: "#e1306c" },
@@ -61,9 +62,14 @@ export default function BoostFlow() {
   const [processing, setProcessing] = useState(false);
   const [reference, setReference] = useState("");
   const timer = useRef(null);
+  const flowRef = useRef(null);
   const PlatformIcon = platform?.icon;
 
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  useEffect(() => {
+    if (step > 0) flowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step]);
 
   const checkAccount = (event) => {
     event.preventDefault();
@@ -107,11 +113,12 @@ export default function BoostFlow() {
 
   return (
     <div className="clone-page">
+      <ScrollEffects />
       <div className="announcement clone-announcement">
         <div className="announcement-inner">
           <Star size={15} fill="currentColor" className="announcement-star" />
-          <strong>Presentation mode:</strong>
-          <span>No account needed. This demo checks eligibility instantly.</span>
+          <strong>Free eligibility check:</strong>
+          <span>No account needed. See if your profile qualifies instantly.</span>
           <span className="announcement-link">All networks supported <ArrowRight size={13} /></span>
         </div>
       </div>
@@ -124,7 +131,7 @@ export default function BoostFlow() {
           </div>
           <div className="clone-header-right">
             <span className="clone-header-chip"><Globe size={14} /> 6 networks</span>
-            <span className="pill pill-light clone-mode">Demo mode</span>
+            <span className="pill pill-light clone-mode"><span className="live-dot" /> Live checker</span>
           </div>
         </div>
       </header>
@@ -140,14 +147,14 @@ export default function BoostFlow() {
               <p>Choose your network, check your username, pick a package, then pay with mobile money or card. No sign in or sign up needed.</p>
               <div className="clone-trust">
                 <span><ShieldCheck size={14} /> No password needed</span>
-                <span><Zap size={14} /> Instant simulation</span>
+                <span><Zap size={14} /> Instant results</span>
                 <span><Globe size={14} /> All networks</span>
               </div>
             </div>
 
             <Progress step={step} />
 
-            <div className="clone-flow-wrap">
+            <div className="clone-flow-wrap" ref={flowRef}>
               <section className="clone-flow" key={step}>
                 {step === 0 && (
                   <>
@@ -208,7 +215,11 @@ export default function BoostFlow() {
                     {checking && (
                       <div className="clone-loading" aria-live="polite">
                         <Loader2 size={26} className="spin" />
-                        <div><strong>Looking up @{username || "account"}</strong><span>Connecting to {platform?.name} and reviewing account details...</span></div>
+                        <div>
+                          <strong>Looking up @{username || "account"}</strong>
+                          <span>Connecting to {platform?.name} and reviewing account details...</span>
+                          <div className="clone-progress-bar"><span /></div>
+                        </div>
                       </div>
                     )}
                   </>
@@ -336,6 +347,16 @@ export default function BoostFlow() {
                       <button type="submit" className="btn btn-primary btn-lg clone-full-btn" disabled={processing || phone.trim().length < 9}>
                         {processing ? <><Loader2 size={18} className="spin" /> Preparing payment...</> : paymentMethod === "card" ? "Continue to card checkout" : "Send mobile money prompt"}
                       </button>
+                      {processing && (
+                        <div className="clone-loading" aria-live="polite">
+                          <Loader2 size={26} className="spin" />
+                          <div>
+                            <strong>Securing your request</strong>
+                            <span>Preparing a safe checkout with NORIPESA...</span>
+                            <div className="clone-progress-bar"><span /></div>
+                          </div>
+                        </div>
+                      )}
                     </form>
                   </>
                 )}
@@ -361,15 +382,15 @@ export default function BoostFlow() {
               </section>
             </div>
 
-            <p className="clone-disclaimer"><ShieldCheck size={14} /> Demo presentation only. No payment is charged and no followers are delivered.</p>
+            <p className="clone-disclaimer"><ShieldCheck size={14} /> Secure checkout powered by NORIPESA. We never ask for your password.</p>
           </div>
         </section>
       </main>
 
       <footer className="site-footer clone-footer">
         <div className="container footer-bottom">
-          <span>© 2026 Folowaz. Presentation demo.</span>
-          <span>Built for demonstration, not for real account growth.</span>
+          <span>© 2026 Folowaz. All rights reserved.</span>
+          <span>Grow with confidence, one check at a time.</span>
         </div>
       </footer>
     </div>

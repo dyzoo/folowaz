@@ -12,7 +12,7 @@ export default function ScrollEffects() {
     const glows = Array.from(document.querySelectorAll(".hero-glow"));
     const targets = Array.from(
       document.querySelectorAll(
-        ".section, .step-card, .why-card, .price-card, .review-card, .feature-card, .result-card, .faq-intro, .accordion-item, .guarantee-card, .logos-section"
+        ".section, .why-card, .review-card, .feature-card, .result-card, .faq-intro, .accordion-item, .logos-section"
       )
     );
 

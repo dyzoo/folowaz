@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AtSign, TrendingUp } from "lucide-react";
-import { isDatabaseConfigured } from "@/lib/env";
-import { demoConnection, demoSettings, demoSnapshots } from "@/lib/demo-data";
 
 export default function OverviewPage() {
   const [snapshots, setSnapshots] = useState([]);
@@ -14,23 +12,19 @@ export default function OverviewPage() {
 
   useEffect(() => {
     async function load() {
-      if (!isDatabaseConfigured) {
-        setSnapshots(demoSnapshots);
-        setConnection(demoConnection);
-        setSettings(demoSettings);
+      try {
+        const [snapRes, profileRes, settingRes] = await Promise.all([
+          fetch("/api/analytics"), fetch("/api/profile"), fetch("/api/growth-settings"),
+        ]);
+        const [snapData, profileData, settingData] = await Promise.all([
+          snapRes.json(), profileRes.json(), settingRes.json(),
+        ]);
+        setSnapshots(snapData.snapshots || []);
+        setConnection(profileData.user?.instagram_username ? { username: profileData.user.instagram_username } : null);
+        setSettings(settingData.settings || null);
+      } finally {
         setLoading(false);
-        return;
       }
-      const [snapRes, profileRes, settingRes] = await Promise.all([
-        fetch("/api/analytics"), fetch("/api/profile"), fetch("/api/growth-settings"),
-      ]);
-      const [snapData, profileData, settingData] = await Promise.all([
-        snapRes.json(), profileRes.json(), settingRes.json(),
-      ]);
-      setSnapshots(snapData.snapshots || []);
-      setConnection(profileData.user?.instagram_username ? { username: profileData.user.instagram_username } : null);
-      setSettings(settingData.settings || null);
-      setLoading(false);
     }
     load();
   }, []);
@@ -58,16 +52,26 @@ export default function OverviewPage() {
       )}
 
       <div className="grid-4">
-        <div className="metric"><span>Wafuasi</span><strong>{latest?.followers?.toLocaleString() || "0"}</strong><small><TrendingUp size={13} /> {growth.toLocaleString()} leo</small></div>
-        <div className="metric"><span>Kufikia (reach)</span><strong>{latest?.reach?.toLocaleString() || "0"}</strong><small>vipindi 7 vilivyopita</small></div>
-        <div className="metric"><span>Kupendwa</span><strong>{latest?.likes?.toLocaleString() || "0"}</strong><small><TrendingUp size={13} /> {growth > 0 ? Math.round(growth / 4) : 0} leo</small></div>
-        <div className="metric"><span>Maoni ya wasifu</span><strong>{latest?.profile_views?.toLocaleString() || "0"}</strong><small><TrendingUp size={13} /> {growth > 0 ? Math.round(growth / 10) : 0} leo</small></div>
+        {loading ? (
+          <>
+            {[0, 1, 2, 3].map((index) => <div key={index} className="metric skeleton skeleton-metric" />)}
+          </>
+        ) : (
+          <>
+            <div className="metric"><span>Wafuasi</span><strong>{latest?.followers?.toLocaleString() || "0"}</strong><small><TrendingUp size={13} /> {growth.toLocaleString()} leo</small></div>
+            <div className="metric"><span>Kufikia (reach)</span><strong>{latest?.reach?.toLocaleString() || "0"}</strong><small>vipindi 7 vilivyopita</small></div>
+            <div className="metric"><span>Kupendwa</span><strong>{latest?.likes?.toLocaleString() || "0"}</strong><small><TrendingUp size={13} /> {growth > 0 ? Math.round(growth / 4) : 0} leo</small></div>
+            <div className="metric"><span>Maoni ya wasifu</span><strong>{latest?.profile_views?.toLocaleString() || "0"}</strong><small><TrendingUp size={13} /> {growth > 0 ? Math.round(growth / 10) : 0} leo</small></div>
+          </>
+        )}
       </div>
 
       <div className="grid-2">
         <div className="panel">
           <div className="panel-head"><h3>Ukuaji wa wafuasi</h3><span className="tag green">Siku 7 zilizopita</span></div>
-          {snapshots.length ? (
+          {loading ? (
+            <div className="skeleton skeleton-chart" />
+          ) : snapshots.length ? (
             <>
               <div className="chart">
                 {snapshots.map((item) => (
@@ -76,16 +80,26 @@ export default function OverviewPage() {
               </div>
               <div className="chart-labels">{snapshots.map((item) => <span key={item.recorded_on}>{item.recorded_on.slice(5)}</span>)}</div>
             </>
-          ) : <div className="empty-state">{loading ? "Inapakia..." : "Hakuna takwimu bado. Unganisha Instagram ili kuanza kufuatilia."}</div>}
+          ) : <div className="empty-state">Hakuna takwimu bado. Unganisha Instagram ili kuanza kufuatilia.</div>}
         </div>
 
         <div className="panel">
           <div className="panel-head"><h3>Hali ya ukuaji</h3><span className={`tag ${settings?.status === "active" ? "green" : "gray"}`}>{settings?.status === "active" ? "Inafanya kazi" : "Imesitishwa"}</span></div>
-          <p style={{ fontSize: ".88rem" }}><strong>Niche:</strong> {settings?.niche || "Bado haijawekwa"}</p>
-          <p style={{ fontSize: ".88rem" }}><strong>Kikomo cha kila siku:</strong> {settings?.daily_limit || 0}</p>
-          <p style={{ fontSize: ".88rem" }}><strong>Jina la akaunti:</strong> @{connection?.username || "bado"}</p>
+          {loading ? (
+            <div className="skeleton-stack">
+              <div className="skeleton skeleton-line" />
+              <div className="skeleton skeleton-line short" />
+              <div className="skeleton skeleton-line" />
+            </div>
+          ) : (
+            <>
+              <p style={{ fontSize: ".88rem" }}><strong>Niche:</strong> {settings?.niche || "Bado haijawekwa"}</p>
+              <p style={{ fontSize: ".88rem" }}><strong>Kikomo cha kila siku:</strong> {settings?.daily_limit || 0}</p>
+              <p style={{ fontSize: ".88rem" }}><strong>Jina la akaunti:</strong> @{connection?.username || "bado"}</p>
+            </>
+          )}
           <div className="action-row"><Link href="/dashboard/targeting" className="btn btn-outline btn-sm">Hariri ulengaji</Link><Link href="/dashboard/analytics" className="btn btn-primary btn-sm">Angalia uchanganuzi</Link></div>
-          <p className="hint">Shughuli za ukuaji zinaonyeshwa kwa madhumuni ya mfano. Hakuna wiki au boti zinazotumika.</p>
+          <p className="hint">Sasisha mipangilio ya ulengaji ili kudhibiti jinsi akaunti yako inavyokua.</p>
         </div>
       </div>
 
@@ -94,10 +108,16 @@ export default function OverviewPage() {
         <table className="table">
           <thead><tr><th>Tarehe</th><th>Wafuasi</th><th>Unafuata</th><th>Kupendwa</th><th>Maoni</th></tr></thead>
           <tbody>
-            {[...snapshots].reverse().slice(0, 5).map((item) => (
-              <tr key={item.recorded_on}><td>{item.recorded_on}</td><td>{item.followers.toLocaleString()}</td><td>{item.following.toLocaleString()}</td><td>{item.likes.toLocaleString()}</td><td>{item.profile_views.toLocaleString()}</td></tr>
-            ))}
-            {!snapshots.length && <tr><td colSpan={5} className="empty-state">Hakuna data bado.</td></tr>}
+            {loading ? (
+              [0, 1, 2].map((index) => <tr key={index}><td colSpan={5}><div className="skeleton skeleton-row" /></td></tr>)
+            ) : (
+              <>
+                {[...snapshots].reverse().slice(0, 5).map((item) => (
+                  <tr key={item.recorded_on}><td>{item.recorded_on}</td><td>{item.followers.toLocaleString()}</td><td>{item.following.toLocaleString()}</td><td>{item.likes.toLocaleString()}</td><td>{item.profile_views.toLocaleString()}</td></tr>
+                ))}
+                {!snapshots.length && <tr><td colSpan={5} className="empty-state">Hakuna data bado.</td></tr>}
+              </>
+            )}
           </tbody>
         </table>
       </div>

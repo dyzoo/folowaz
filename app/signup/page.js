@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { isDatabaseConfigured } from "@/lib/env";
 
 export default function SignupPage() {
@@ -19,21 +20,25 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
 
-    const response = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fullName, email, password, instagramUsername: ig || "" }),
-    });
-    const data = await response.json();
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName, email, password, instagramUsername: ig || "" }),
+      });
+      const data = await response.json();
 
-    if (!response.ok) {
-      setError(data.error || "Imeshindwa kufungua akaunti.");
+      if (!response.ok) {
+        setError(data.error || "Imeshindwa kufungua akaunti.");
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Hitilafu ya mtandao. Tafadhali jaribu tena.");
       setLoading(false);
-      return;
     }
-
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (
@@ -48,7 +53,7 @@ export default function SignupPage() {
           <div className="field"><label htmlFor="name">Jina kamili</label><input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jina lako" required /></div>
           <div className="field"><label htmlFor="email">Barua pepe</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="wewe@mfano.com" required /></div>
           <div className="field"><label htmlFor="password">Nenosiri</label><input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} placeholder="Angalau herufi 6" required /></div>
-          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? "Inaunda..." : "Fungua akaunti"}</button>
+          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? <><Loader2 size={17} className="spin" /> Inaunda...</> : "Fungua akaunti"}</button>
         </form>
         <p className="auth-switch">Una akaunti? <Link href="/login">Ingia</Link></p>
       </div>
