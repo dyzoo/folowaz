@@ -29,14 +29,15 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Imeshindwa kufungua akaunti.");
+        setError(data.error || "Account creation failed.");
+        setLoading(false);
         return;
       }
 
       router.push("/dashboard");
       router.refresh();
     } catch {
-      setError("Hitilafu ya mtandao. Tafadhali jaribu tena.");
+      setError("Network error. Please try again.");
       setLoading(false);
     }
   }
@@ -45,17 +46,17 @@ export default function SignupPage() {
     <main className="auth-page">
       <div className="auth-card">
         <Link href="/" className="brand"><span className="brand-mark">f</span><span className="brand-name">Folowaz</span></Link>
-        <h1>Anza bure</h1>
-        <p>Fungua akaunti yako ya ukuaji wa Instagram.</p>
-        {!isDatabaseConfigured && <div className="setup-note">Database bado haijaunganishwa. Weka <code>DATABASE_URL</code> kwenye <code>.env.local</code>.</div>}
+        <h1>Start for free</h1>
+        <p>Create your Instagram growth account.</p>
+        {!isDatabaseConfigured && <div className="setup-note">Database is not connected yet. Set <code>DATABASE_URL</code> in <code>.env.local</code>.</div>}
         {error && <div className="auth-error">{error}</div>}
         <form onSubmit={submit}>
-          <div className="field"><label htmlFor="name">Jina kamili</label><input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jina lako" required /></div>
-          <div className="field"><label htmlFor="email">Barua pepe</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="wewe@mfano.com" required /></div>
-          <div className="field"><label htmlFor="password">Nenosiri</label><input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} placeholder="Angalau herufi 6" required /></div>
-          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? <><Loader2 size={17} className="spin" /> Inaunda...</> : "Fungua akaunti"}</button>
+          <div className="field"><label htmlFor="name">Full name</label><input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your name" required /></div>
+          <div className="field"><label htmlFor="email">Email</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required /></div>
+          <div className="field"><label htmlFor="password">Password</label><input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} placeholder="At least 6 characters" required /></div>
+          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? <><Loader2 size={17} className="spin" /> Creating...</> : "Create account"}</button>
         </form>
-        <p className="auth-switch">Una akaunti? <Link href="/login">Ingia</Link></p>
+        <p className="auth-switch">Already have an account? <Link href="/login">Sign in</Link></p>
       </div>
     </main>
   );

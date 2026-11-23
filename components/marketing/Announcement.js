@@ -36,16 +36,16 @@ export default function Announcement() {
     <div className="announcement">
       <div className="announcement-inner">
         <Star size={15} fill="currentColor" className="announcement-star" />
-        <strong>Ofa ya Black Friday:</strong>
-        <span>Mipango yote imepunguzwa bei kwa 60%, kwa muda mfupi tu!</span>
-        <div className="countdown" aria-label="Muda uliobaki">
-          <span>{time.days}</span><small>siku</small>
-          <span>{time.hours}</span><small>sa</small>
-          <span>{time.mins}</span><small>dak</small>
-          <span>{time.secs}</span><small>sek</small>
+        <strong>Black Friday offer:</strong>
+        <span>All plans are 60% off for a limited time!</span>
+        <div className="countdown" aria-label="Time remaining">
+          <span>{time.days}</span><small>days</small>
+          <span>{time.hours}</span><small>hrs</small>
+          <span>{time.mins}</span><small>min</small>
+          <span>{time.secs}</span><small>sec</small>
         </div>
-        <a href="/bei" className="announcement-link">Pata ofa <ArrowRight size={13} /></a>
-        <button className="announcement-close" onClick={() => setVisible(false)} aria-label="Funga taarifa"><X size={16} /></button>
+        <a href="/bei" className="announcement-link">Get the offer <ArrowRight size={13} /></a>
+        <button className="announcement-close" onClick={() => setVisible(false)} aria-label="Dismiss announcement"><X size={16} /></button>
       </div>
     </div>
   );

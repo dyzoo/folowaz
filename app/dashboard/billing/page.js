@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CreditCard, Loader2, Smartphone } from "lucide-react";
 
 const planCards = [
-  { key: "basic", name: "Basic", price: 19000, limit: "wafuasi 1,000 / mwezi" },
-  { key: "pro", name: "Pro", price: 39000, limit: "wafuasi 4,000+ / mwezi" },
-  { key: "turbo", name: "Turbo", price: 79000, limit: "wafuasi 10,000+ / mwezi" },
+  { key: "basic", name: "Basic", price: 19000, limit: "1,000 followers / month" },
+  { key: "pro", name: "Pro", price: 39000, limit: "4,000+ followers / month" },
+  { key: "turbo", name: "Turbo", price: 79000, limit: "10,000+ followers / month" },
 ];
 
 const finalStatuses = ["failed", "cancelled", "expired"];
@@ -59,18 +59,18 @@ export default function BillingPage() {
         body: JSON.stringify({ reference }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Hali ya malipo haikuweza kusomwa.");
+      if (!response.ok) throw new Error(data.error || "Payment status could not be read.");
 
       if (data.orderStatus === "paid") {
         stopPolling();
-        setNotice(`Malipo yamekamilika. Mpango wako ${data.reference || reference} umewashwa.`);
+        setNotice(`Payment confirmed. Plan ${data.reference || reference} is now active.`);
         await loadBilling();
       } else if (finalStatuses.includes(data.orderStatus)) {
         stopPolling();
-        setError(`Malipo yalikuwa ${data.orderStatus}. Tafadhali jaribu tena.`);
+        setError(`Payment was ${data.orderStatus}. Please try again.`);
         await loadBilling();
       } else {
-        setNotice(`Malipo bado yanachakatwa. Reference: ${data.reference || reference}`);
+        setNotice(`Payment is still processing. Reference: ${data.reference || reference}`);
       }
       return data;
     } catch (paymentError) {
@@ -98,9 +98,9 @@ export default function BillingPage() {
     const status = params.get("status");
     const reference = params.get("reference");
 
-    if (status === "cancelled") queueMicrotask(() => setNotice("Malipo yalighairiwa."));
-    if (status === "not_configured") queueMicrotask(() => setError("Malipo hayajasanidiwa kwenye server."));
-    if (status === "invalid") queueMicrotask(() => setError("Mpango uliochaguliwa si sahihi."));
+    if (status === "cancelled") queueMicrotask(() => setNotice("Payment was cancelled."));
+    if (status === "not_configured") queueMicrotask(() => setError("Payments are not configured on the server."));
+    if (status === "invalid") queueMicrotask(() => setError("The selected plan is invalid."));
     if (reference) queueMicrotask(() => checkReference(reference));
     queueMicrotask(() => loadBilling());
 
@@ -120,14 +120,14 @@ export default function BillingPage() {
         body: JSON.stringify({ plan: selectedPlan.key, method, phone }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Ombi la malipo halikufanikiwa.");
+      if (!response.ok) throw new Error(data.error || "The payment request failed.");
 
       if (method === "card" && data.checkoutUrl) {
         window.location.assign(data.checkoutUrl);
         return;
       }
 
-      setNotice(`Ombi la malipo limetumwa. Reference: ${data.reference}. Angalia simu yako ili kuthibitisha.`);
+      setNotice(`Payment request sent. Reference: ${data.reference}. ${data.message || "Check your phone to confirm."}`);
       startPolling(data.reference);
       await loadBilling();
     } catch (paymentError) {
@@ -140,20 +140,20 @@ export default function BillingPage() {
   return (
     <>
       <div className="content-head">
-        <h1>Malipo na mpango</h1>
-        <p>Chagua mpango, kisha ulipe kwa mobile money au kadi kupitia NORIPESA.</p>
+        <h1>Billing & plan</h1>
+        <p>Choose a plan, then pay securely with mobile money or card.</p>
       </div>
       {notice && <div className="auth-success">{notice}</div>}
       {error && <div className="auth-error">{error}</div>}
       <div className="panel">
-        <div className="panel-head"><h3>Mpango wa sasa</h3><span className={`tag ${subscription?.status === "active" ? "green" : "gray"}`}>{subscription?.status || "Hakuna mpango"}</span></div>
+        <div className="panel-head"><h3>Current plan</h3><span className={`tag ${subscription?.status === "active" ? "green" : "gray"}`}>{subscription?.status || "No plan"}</span></div>
         {initialLoading ? (
           <div className="skeleton-stack">
             <div className="skeleton skeleton-line tall" />
             <div className="skeleton skeleton-line short" />
           </div>
         ) : (
-          <p style={{ fontSize: ".9rem" }}>{subscription ? <>{subscription.plan.toUpperCase()} · {subscription.current_period_end ? `hadhi hadi ${new Date(subscription.current_period_end).toLocaleDateString("sw")}` : ""}</> : "Huna mpango unaofanya kazi. Chagua moja hapa chini."}</p>
+          <p style={{ fontSize: ".9rem" }}>{subscription ? <>{subscription.plan.toUpperCase()} · {subscription.current_period_end ? `valid until ${new Date(subscription.current_period_end).toLocaleDateString("en-TZ")}` : ""}</> : "You do not have an active plan. Choose one below."}</p>
         )}
       </div>
       <div className="grid-4">
@@ -162,7 +162,7 @@ export default function BillingPage() {
             <span>{plan.name}</span><strong>{formatAmount(plan.price)}</strong><small>{plan.limit}</small>
             <div className="action-row">
               <button type="button" className="btn btn-primary btn-sm" onClick={() => setSelectedPlan(plan)}>
-                {selectedPlan?.key === plan.key ? "Imechaguliwa" : "Chagua"}
+                {selectedPlan?.key === plan.key ? "Selected" : "Select"}
               </button>
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function BillingPage() {
 
       {selectedPlan && (
         <div className="panel">
-          <h3>Lipa kwa {selectedPlan.name} · {formatAmount(selectedPlan.price)}</h3>
+          <h3>Pay for {selectedPlan.name} · {formatAmount(selectedPlan.price)}</h3>
           <div className="payment-methods">
             <button type="button" className={`payment-method ${method === "mobile" ? "selected" : ""}`} onClick={() => setMethod("mobile")}>
               <Smartphone size={22} />
@@ -179,11 +179,11 @@ export default function BillingPage() {
             </button>
             <button type="button" className={`payment-method ${method === "card" ? "selected" : ""}`} onClick={() => setMethod("card")}>
               <CreditCard size={22} />
-              <span><strong>Kadi</strong><small>Visa au Mastercard kupitia checkout salama</small></span>
+              <span><strong>Card</strong><small>Visa or Mastercard via secure checkout</small></span>
             </button>
           </div>
           <div className="field">
-            <label htmlFor="payment-phone">Namba ya simu</label>
+            <label htmlFor="payment-phone">Phone number</label>
             <input
               id="payment-phone"
               type="tel"
@@ -192,19 +192,19 @@ export default function BillingPage() {
               placeholder="07XX XXX XXX"
               autoComplete="tel"
             />
-            <span className="hint">Jina: {user?.full_name || user?.email || "Mtumiaji"} · Barua pepe: {user?.email || "—"}</span>
+            <span className="hint">Name: {user?.full_name || user?.email || "User"} · Email: {user?.email || "—"}</span>
           </div>
           <button type="button" className="btn btn-primary" onClick={pay} disabled={loading || phone.trim().length < 9}>
-            {loading ? <><Loader2 size={18} className="spin" /> Inatuma ombi...</> : method === "card" ? "Endelea kwa kadi" : "Tuma ombi la malipo"}
+            {loading ? <><Loader2 size={18} className="spin" /> Sending request...</> : method === "card" ? "Continue with card" : "Send payment request"}
           </button>
-          {checkingReference && <span className="hint"><Loader2 size={13} className="spin" /> Inakagua hali ya malipo...</span>}
+          {checkingReference && <span className="hint"><Loader2 size={13} className="spin" /> Checking payment status...</span>}
         </div>
       )}
 
       <div className="panel">
-        <h3>Historia ya maagizo</h3>
+        <h3>Order history</h3>
         <table className="table">
-          <thead><tr><th>Tarehe</th><th>Mpango</th><th>Njia</th><th>Kiasi</th><th>Hali</th></tr></thead>
+          <thead><tr><th>Date</th><th>Plan</th><th>Method</th><th>Amount</th><th>Status</th></tr></thead>
           <tbody>
             {initialLoading ? (
               [0, 1, 2].map((index) => <tr key={index}><td colSpan={5}><div className="skeleton skeleton-row" /></td></tr>)
@@ -212,14 +212,14 @@ export default function BillingPage() {
               <>
                 {orders.map((order) => (
                   <tr key={order.id}>
-                    <td>{new Date(order.created_at).toLocaleDateString("sw")}</td>
+                    <td>{new Date(order.created_at).toLocaleDateString("en-TZ")}</td>
                     <td>{order.plan}</td>
-                    <td>{order.payment_method === "card" ? "Kadi" : "Mobile money"}</td>
+                    <td>{order.payment_method === "card" ? "Card" : "Mobile money"}</td>
                     <td>{formatAmount(order.amount)}</td>
                     <td><span className={`tag ${order.status === "paid" ? "green" : finalStatuses.includes(order.status) ? "red" : "gray"}`}>{order.status}</span></td>
                   </tr>
                 ))}
-                {!orders.length && <tr><td colSpan={5} className="empty-state">Hakuna maagizo bado.</td></tr>}
+                {!orders.length && <tr><td colSpan={5} className="empty-state">No orders yet.</td></tr>}
               </>
             )}
           </tbody>

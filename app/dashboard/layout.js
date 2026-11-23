@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }) {
   const user = isDatabaseConfigured ? await getSessionUser() : null;
   if (isDatabaseConfigured && !user) redirect("/login");
 
-  const name = user?.full_name || user?.email?.split("@")[0] || "Mtumiaji";
+  const name = user?.full_name || user?.email?.split("@")[0] || "User";
   const email = user?.email || "user@folowaz.local";
 
   return (
@@ -29,12 +29,12 @@ export default async function DashboardLayout({ children }) {
       </aside>
       <div className="main">
         <header className="topbar">
-          <h2>Jukwaa la Folowaz</h2>
+          <h2>Folowaz Platform</h2>
           <div className="topbar-actions">
             <span className={`status-pill ${isDatabaseConfigured ? "" : "off"}`}>
-              {isDatabaseConfigured ? "● Imeunganishwa" : "● Haijaunganishwa"}
+              {isDatabaseConfigured ? "● Connected" : "● Not connected"}
             </span>
-            <Link href="/">Angalia tovuti ↗</Link>
+            <Link href="/">View website ↗</Link>
           </div>
         </header>
         <div className="content">{children}</div>

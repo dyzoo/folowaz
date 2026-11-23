@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 
 export async function GET() {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unahitaji kuingia." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "You must sign in." }, { status: 401 });
 
   const rows = await sql`
     select * from public.analytics_snapshots

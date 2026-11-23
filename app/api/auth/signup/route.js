@@ -10,11 +10,11 @@ export async function POST(request) {
   const instagramUsername = String(body.instagramUsername || "").replace(/^@/, "").trim();
 
   if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 6 || !fullName) {
-    return NextResponse.json({ error: "Tafadhali jaza data sahihi." }, { status: 400 });
+    return NextResponse.json({ error: "Please provide valid details." }, { status: 400 });
   }
 
   const existing = await sql`select id from public.users where email = ${email} limit 1`;
-  if (existing.length) return NextResponse.json({ error: "Barua pepe hii tayari imesajiliwa." }, { status: 409 });
+  if (existing.length) return NextResponse.json({ error: "This email is already registered." }, { status: 409 });
 
   const hash = await hashPassword(password);
   const rows = await sql`

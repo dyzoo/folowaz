@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, ArrowRight, AtSign, Briefcase, Camera, Check, CheckCircle2, CreditCard, Globe,
-  Loader2, Music2, Package, Phone, Play, ShieldCheck, Smartphone, Star, Users, Zap,
+  Loader2, Music2, Package, Phone, Play, ShieldCheck, Smartphone, Star, Users, X, Zap,
 } from "lucide-react";
 import ScrollEffects from "@/components/marketing/ScrollEffects";
 
@@ -17,9 +17,9 @@ const platforms = [
 ];
 
 const packages = [
-  { id: "starter", followers: "5K", amount: "TZS 5,000", label: "5,000 followers", badge: "Starter", perk: "Good for a quick test" },
-  { id: "growth", followers: "10K", amount: "TZS 15,000", label: "10,000 followers", badge: "Most popular", perk: "Best balance of reach and price", featured: true },
-  { id: "pro", followers: "20K", amount: "TZS 25,000", label: "20,000 followers", badge: "Best value", perk: "Maximum growth for campaigns" },
+  { id: "boost5k", followers: "5K", amount: "TZS 5,000", label: "5,000 followers", badge: "Starter", perk: "Good for a quick test" },
+  { id: "boost10k", followers: "10K", amount: "TZS 15,000", label: "10,000 followers", badge: "Most popular", perk: "Best balance of reach and price", featured: true },
+  { id: "boost20k", followers: "20K", amount: "TZS 25,000", label: "20,000 followers", badge: "Best value", perk: "Maximum growth for campaigns" },
 ];
 
 const steps = [
@@ -30,6 +30,8 @@ const steps = [
 ];
 
 const cardClasses = ["card-coral", "card-violet", "card-pink"];
+const statusMap = { success: "paid", failed: "failed", cancelled: "cancelled", expired: "expired" };
+const finalStatuses = ["paid", "failed", "cancelled", "expired"];
 
 function Progress({ step }) {
   const current = step === 0 ? 0 : step === 1 || step === 2 ? 1 : step === 3 ? 2 : 3;
@@ -61,14 +63,28 @@ export default function BoostFlow() {
   const [checking, setChecking] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [reference, setReference] = useState("");
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("pending");
+  const [paymentError, setPaymentError] = useState("");
+  const [checkTimedOut, setCheckTimedOut] = useState(false);
   const timer = useRef(null);
+  const pollTimer = useRef(null);
   const flowRef = useRef(null);
+  const ctaRef = useRef(null);
   const PlatformIcon = platform?.icon;
+  const failed = finalStatuses.includes(paymentStatus) && paymentStatus !== "paid";
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => () => {
+    clearTimeout(timer.current);
+    clearInterval(pollTimer.current);
+  }, []);
 
   useEffect(() => {
-    if (step > 0) flowRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (step === 0) return;
+    const timeout = setTimeout(() => {
+      (ctaRef.current || flowRef.current)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 140);
+    return () => clearTimeout(timeout);
   }, [step]);
 
   const checkAccount = (event) => {
@@ -81,19 +97,94 @@ export default function BoostFlow() {
     }, 1600);
   };
 
-  const submitPayment = (event) => {
+  const stopPolling = () => {
+    clearInterval(pollTimer.current);
+    pollTimer.current = null;
+  };
+
+  const checkPaymentStatus = async (ref) => {
+    try {
+      const response = await fetch("/api/payments/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference: ref }),
+      });
+      const data = await response.json();
+      if (!response.ok) return null;
+      const status = data.orderStatus || statusMap[data.paymentStatus];
+      if (status) setPaymentStatus(status);
+      if (data.message) setPaymentMessage(data.message);
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
+  const startPolling = (ref) => {
+    stopPolling();
+    let attempts = 0;
+    pollTimer.current = setInterval(async () => {
+      attempts += 1;
+      const data = await checkPaymentStatus(ref);
+      const status = data?.orderStatus || statusMap[data?.paymentStatus];
+      if (attempts >= 20) setCheckTimedOut(true);
+      if (!data || finalStatuses.includes(status) || attempts >= 20) stopPolling();
+    }, 4000);
+  };
+
+  async function submitPayment(event) {
     event.preventDefault();
     if (phone.trim().length < 9) return;
     if (paymentMethod === "card" && (!cardName.trim() || !cardEmail.includes("@"))) return;
     setProcessing(true);
-    timer.current = setTimeout(() => {
-      setReference(`NR-${Date.now().toString().slice(-6)}`);
-      setProcessing(false);
+    setPaymentError("");
+    setPaymentMessage("");
+    setPaymentStatus("pending");
+    setCheckTimedOut(false);
+
+    try {
+      const response = await fetch("/api/payments/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: selectedPackage?.id,
+          method: paymentMethod,
+          phone,
+          fullName: paymentMethod === "card" ? cardName : "",
+          email: paymentMethod === "card" ? cardEmail : "",
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok && response.status !== 202) {
+        const error = new Error(data.error || "The payment request failed.");
+        error.retryAfterSeconds = data.retryAfterSeconds;
+        throw error;
+      }
+
+      const nextStatus = data.orderStatus || statusMap[data.providerStatus] || "pending";
+      const nextReference = data.reference || "";
+      setReference(nextReference);
+      setPaymentMessage(data.message || (response.status === 202 ? data.error : "") || "");
+      setPaymentStatus(nextStatus);
+
+      if (paymentMethod === "card") {
+        if (!data.checkoutUrl) throw new Error(data.error || "No payment link was returned.");
+        window.location.assign(data.checkoutUrl);
+        return;
+      }
+
       setStep(5);
-    }, 1700);
-  };
+      if (!finalStatuses.includes(nextStatus) && nextReference) startPolling(nextReference);
+    } catch (error) {
+      const retry = error.retryAfterSeconds ? ` Please try again after ${error.retryAfterSeconds} seconds.` : "";
+      setPaymentError(`${error.message || "Network error. Please try again."}${retry}`);
+    } finally {
+      setProcessing(false);
+    }
+  }
 
   const reset = () => {
+    stopPolling();
     setStep(0);
     setPlatform(null);
     setUsername("");
@@ -103,12 +194,21 @@ export default function BoostFlow() {
     setCardName("");
     setCardEmail("");
     setReference("");
+    setPaymentMessage("");
+    setPaymentStatus("pending");
+    setPaymentError("");
+    setCheckTimedOut(false);
   };
 
   const back = () => {
     if (step === 1) setStep(0);
     else if (step === 2 || step === 3) setStep(1);
     else if (step === 4) setStep(3);
+  };
+
+  const selectPackage = (item) => {
+    setSelectedPackage(item);
+    requestAnimationFrame(() => ctaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
   };
 
   return (
@@ -203,12 +303,11 @@ export default function BoostFlow() {
                           value={username}
                           onChange={(event) => setUsername(event.target.value.replace(/^@/, ""))}
                           placeholder="your-username"
-                          aria-label="Username"
-                          required
-                          autoFocus
-                        />
+                           aria-label="Username"
+                           required
+                         />
                       </div>
-                      <button type="submit" className="btn btn-primary btn-lg" disabled={checking}>
+                      <button type="submit" className="btn btn-primary btn-lg" disabled={checking} ref={ctaRef}>
                         {checking ? <><Loader2 size={18} className="spin" /> Checking account...</> : <>Check account <ArrowRight size={17} /></>}
                       </button>
                     </form>
@@ -241,7 +340,7 @@ export default function BoostFlow() {
                         </div>
                       </div>
                     </div>
-                    <button type="button" className="btn btn-primary btn-lg clone-full-btn" onClick={() => setStep(3)}>
+                    <button type="button" className="btn btn-primary btn-lg clone-full-btn" onClick={() => setStep(3)} ref={ctaRef}>
                       Choose a package <ArrowRight size={17} />
                     </button>
                   </>
@@ -261,7 +360,7 @@ export default function BoostFlow() {
                           type="button"
                           key={item.id}
                           className={`price-card clone-price ${item.featured ? "featured" : ""} ${selectedPackage?.id === item.id ? "selected" : ""}`}
-                          onClick={() => setSelectedPackage(item)}
+                          onClick={() => selectPackage(item)}
                         >
                           <span className="price-badge">{item.badge}</span>
                           <div className="clone-count">{item.followers}</div>
@@ -274,7 +373,7 @@ export default function BoostFlow() {
                         </button>
                       ))}
                     </div>
-                    <button type="button" className="btn btn-primary btn-lg clone-full-btn" disabled={!selectedPackage} onClick={() => setStep(4)}>
+                    <button type="button" className="btn btn-primary btn-lg clone-full-btn" disabled={!selectedPackage} onClick={() => setStep(4)} ref={ctaRef}>
                       Continue to payment <ArrowRight size={17} />
                     </button>
                   </>
@@ -286,7 +385,7 @@ export default function BoostFlow() {
                     <div className="boost-card-head">
                       <span className="step-kicker">Step 4 of 4</span>
                       <h2>Choose how to pay</h2>
-                      <p>Mobile money sends a prompt to your phone. Card payment opens a secure NORIPESA checkout.</p>
+                      <p>Mobile money sends a USSD prompt to your phone. Card payment opens a secure checkout.</p>
                     </div>
                     <div className="panel clone-order">
                       <div><span>Platform</span><strong>{platform?.name}</strong></div>
@@ -301,7 +400,7 @@ export default function BoostFlow() {
                       </button>
                       <button type="button" className={`payment-method ${paymentMethod === "card" ? "selected" : ""}`} onClick={() => setPaymentMethod("card")}>
                         <CreditCard size={22} />
-                        <span><strong>Kadi</strong><small>Visa / Mastercard, 3-D Secure</small></span>
+                        <span><strong>Card</strong><small>Visa / Mastercard, 3-D Secure</small></span>
                       </button>
                     </div>
                     <form className="clone-form" onSubmit={submitPayment}>
@@ -315,7 +414,6 @@ export default function BoostFlow() {
                           onChange={(event) => setPhone(event.target.value)}
                           placeholder="+255 7XX XXX XXX"
                           required
-                          autoFocus
                         />
                       </div>
                       {paymentMethod === "card" && (
@@ -327,7 +425,7 @@ export default function BoostFlow() {
                               type="text"
                               value={cardName}
                               onChange={(event) => setCardName(event.target.value)}
-                              placeholder="Jina kamili"
+                              placeholder="Full name"
                               required
                             />
                           </div>
@@ -338,13 +436,14 @@ export default function BoostFlow() {
                               type="email"
                               value={cardEmail}
                               onChange={(event) => setCardEmail(event.target.value)}
-                              placeholder="jina@mfano.co.tz"
+                              placeholder="you@example.com"
                               required
                             />
                           </div>
                         </>
                       )}
-                      <button type="submit" className="btn btn-primary btn-lg clone-full-btn" disabled={processing || phone.trim().length < 9}>
+                      {paymentError && <div className="auth-error" role="alert">{paymentError}</div>}
+                      <button type="submit" className="btn btn-primary btn-lg clone-full-btn" disabled={processing || phone.trim().length < 9} ref={ctaRef}>
                         {processing ? <><Loader2 size={18} className="spin" /> Preparing payment...</> : paymentMethod === "card" ? "Continue to card checkout" : "Send mobile money prompt"}
                       </button>
                       {processing && (
@@ -352,7 +451,7 @@ export default function BoostFlow() {
                           <Loader2 size={26} className="spin" />
                           <div>
                             <strong>Securing your request</strong>
-                            <span>Preparing a safe checkout with NORIPESA...</span>
+                            <span>Preparing a secure checkout for you...</span>
                             <div className="clone-progress-bar"><span /></div>
                           </div>
                         </div>
@@ -362,19 +461,42 @@ export default function BoostFlow() {
                 )}
 
                 {step === 5 && (
-                  <div className="guarantee-card clone-success clone-done" aria-live="polite">
-                    <div className="guarantee-orb"><CheckCircle2 size={68} strokeWidth={1.5} /></div>
+                  <div className={`guarantee-card clone-success clone-done ${paymentStatus === "paid" ? "is-paid" : ""} ${failed ? "is-failed" : ""}`} aria-live="polite">
+                    <div className="guarantee-orb">
+                      {paymentStatus === "paid" ? <CheckCircle2 size={68} strokeWidth={1.5} /> : failed ? <X size={68} strokeWidth={1.5} /> : <Loader2 size={68} className="spin" strokeWidth={1.5} />}
+                    </div>
                     <div className="guarantee-content">
-                      <div className="pill clone-success-pill"><Check size={14} /> Request ready</div>
-                      <h2>Payment request prepared</h2>
-                      <p>Your {selectedPackage?.label} boost for <strong>@{username}</strong> on {platform?.name} is ready via <strong>{paymentMethod === "card" ? "Visa / Mastercard" : "mobile money"}</strong>. Reference: <strong>{reference}</strong>.</p>
+                      <div className="pill clone-success-pill">
+                        {paymentStatus === "paid" ? <><Check size={14} /> Payment confirmed</> : failed ? <><X size={14} /> Payment not completed</> : <><Loader2 size={14} className="spin" /> Awaiting confirmation</>}
+                      </div>
+                      <h2>{paymentStatus === "paid" ? "Your boost is confirmed" : failed ? "Payment needs attention" : "Check your phone to confirm"}</h2>
+                      <p>
+                        {paymentStatus === "paid"
+                          ? <>Your {selectedPackage?.label} boost for <strong>@{username}</strong> on {platform?.name} is confirmed. Reference: <strong>{reference}</strong>.</>
+                          : failed
+                            ? <>The payment was {paymentStatus}. Reference: <strong>{reference}</strong>. Please start a new request to try again.</>
+                            : <>We sent a payment prompt to <strong>{phone}</strong>. Open it on your phone and confirm with your PIN to complete your {selectedPackage?.label} boost.</>}
+                      </p>
+                      {paymentMessage && (
+                        <div className="clone-prompt-note">
+                          <strong>Payment instructions</strong>
+                          <span>{paymentMessage}</span>
+                        </div>
+                      )}
+                      {!finalStatuses.includes(paymentStatus) && (
+                        <span className="hint clone-status-hint">
+                          {checkTimedOut
+                            ? "Confirm the prompt on your phone, or start a new request."
+                            : <><Loader2 size={13} className="spin" /> Checking payment status automatically...</>}
+                        </span>
+                      )}
                       <div className="clone-success-chips">
                         <span><Check size={14} /> Account checked</span>
                         <span><Check size={14} /> Package selected</span>
-                        <span><Check size={14} /> {paymentMethod === "card" ? "Card checkout ready" : "Mobile prompt ready"}</span>
+                        <span><Check size={14} /> Reference: {reference || "pending"}</span>
                       </div>
-                      <button type="button" className="btn btn-primary btn-lg clone-done-btn" onClick={reset}>
-                        Start another request <ArrowRight size={17} />
+                      <button type="button" className="btn btn-primary btn-lg clone-done-btn" onClick={reset} ref={ctaRef}>
+                        {paymentStatus === "paid" ? "Start another request" : "Make another request"} <ArrowRight size={17} />
                       </button>
                     </div>
                   </div>
@@ -382,7 +504,7 @@ export default function BoostFlow() {
               </section>
             </div>
 
-            <p className="clone-disclaimer"><ShieldCheck size={14} /> Secure checkout powered by NORIPESA. We never ask for your password.</p>
+            <p className="clone-disclaimer"><ShieldCheck size={14} /> Secure checkout. We never ask for your password.</p>
           </div>
         </section>
       </main>

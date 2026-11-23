@@ -8,19 +8,16 @@ import { mapOrderStatus, normalizePhone } from "@/lib/payments";
 
 export async function POST(request) {
   if (!isNoripesaConfigured) {
-    return NextResponse.json({ error: "Malipo hayajasanidiwa." }, { status: 503 });
+    return NextResponse.json({ error: "Payments are not configured." }, { status: 503 });
   }
 
   const user = isDatabaseConfigured ? await getSessionUser() : null;
-  if (isDatabaseConfigured && !user) {
-    return NextResponse.json({ error: "Unahitaji kuingia." }, { status: 401 });
-  }
 
   let body;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Ombi batili." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
   const plan = plans[body?.plan];
@@ -28,12 +25,12 @@ export async function POST(request) {
   const phone = normalizePhone(body?.phone);
 
   if (!plan || !method || !phone) {
-    return NextResponse.json({ error: "Chagua mpango, njia ya malipo, na namba sahihi ya simu." }, { status: 400 });
+    return NextResponse.json({ error: "Choose a plan, payment method, and a valid phone number." }, { status: 400 });
   }
 
   const merchantReference = `FLW-${randomUUID()}`;
-  const customerName = user?.full_name || user?.email?.split("@")[0] || "Folowaz Customer";
-  const customerEmail = user?.email || "noreply@folowaz.local";
+  const customerName = user?.full_name || String(body?.fullName || "").trim().slice(0, 120) || "Folowaz Customer";
+  const customerEmail = user?.email || String(body?.email || "").trim().slice(0, 180) || "noreply@folowaz.local";
   const description = `Folowaz ${plan.name} plan`;
   const returnUrl = method === "card" && siteUrl.startsWith("https://")
     ? `${siteUrl}/dashboard/billing?payment=return&reference=${encodeURIComponent(merchantReference)}`
@@ -80,6 +77,8 @@ export async function POST(request) {
       status: payment.status,
       orderStatus: mapOrderStatus(payment.status),
       checkoutUrl: payment.checkout_url || null,
+      message: payment.message || null,
+      providerStatus: payment.status || null,
       amount: plan.price,
       currency: "TZS",
     });
@@ -90,9 +89,10 @@ export async function POST(request) {
     }
 
     return NextResponse.json({
-      error: error.message || "Ombi la malipo halikufanikiwa.",
+      error: error.message || "The payment request failed.",
       code: error.code,
       reference: outcomeUnknown ? merchantReference : undefined,
+      retryAfterSeconds: error.retryAfterSeconds || null,
     }, { status: outcomeUnknown ? 202 : error.status || 502 });
   }
 }

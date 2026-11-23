@@ -2,9 +2,9 @@ import Link from "next/link";
 import { AtSign, Camera, Play } from "lucide-react";
 
 const columns = [
-  ["Bidhaa", [["Vipengele", "/vipengele"], ["Bei", "/bei"], ["Matokeo", "/matokeo"], ["Maoni", "/maoni"]]],
-  ["Kampuni", [["Kuhusu sisi", "/kuhusu"], ["Maswali", "/maswali"], ["Jinsi inavyofanya kazi", "/jinsi-inavyofanya-kazi"], ["Msaada", "/msaada"]]],
-  ["Akaunti", [["Ingia", "/login"], ["Jisajili", "/signup"], ["Dashibodi", "/dashboard"]]],
+  ["Product", [["Features", "/vipengele"], ["Pricing", "/bei"], ["Results", "/matokeo"], ["Reviews", "/maoni"]]],
+  ["Company", [["About us", "/kuhusu"], ["FAQ", "/maswali"], ["How it works", "/jinsi-inavyofanya-kazi"], ["Support", "/msaada"]]],
+  ["Account", [["Sign in", "/login"], ["Sign up", "/signup"], ["Dashboard", "/dashboard"]]],
 ];
 
 export default function Footer() {
@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="container footer-grid">
         <div className="footer-brand">
           <Link href="/" className="brand"><span className="brand-mark">f</span><span className="brand-name">Folowaz</span></Link>
-          <p>Jukwaa la ukuaji wa Instagram linalotumia AI kukuletea wafuasi halisi, wanaolengwa na wanaoshiriki.</p>
+          <p>An AI-powered Instagram growth platform that brings you real, targeted, and engaged followers.</p>
           <div className="footer-social">
             <Link href="/" aria-label="X"><AtSign size={16} /></Link>
             <Link href="/" aria-label="YouTube"><Play size={16} /></Link>
@@ -28,8 +28,8 @@ export default function Footer() {
         ))}
       </div>
       <div className="container footer-bottom">
-        <span>© 2026 Folowaz. Haki zote zimehifadhiwa.</span>
-        <span>Lugha: <strong>Kiswahili</strong></span>
+        <span>© 2026 Folowaz. All rights reserved.</span>
+        <span>Language: <strong>English</strong></span>
       </div>
     </footer>
   );

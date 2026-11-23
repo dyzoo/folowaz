@@ -37,10 +37,10 @@ export default function ConnectPage() {
         body: JSON.stringify({ instagramUsername: clean }),
       });
       const data = await response.json();
-      setMessage(response.ok ? "Jina la akaunti limehifadhiwa." : data.error);
+      setMessage(response.ok ? "Username saved." : data.error);
       if (response.ok) { setSavedName(clean); setUsername(""); }
     } catch {
-      setMessage("Hitilafu ya mtandao. Tafadhali jaribu tena.");
+      setMessage("Network error. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -48,7 +48,7 @@ export default function ConnectPage() {
 
   return (
     <>
-      <div className="content-head"><h1>Akaunti ya Instagram</h1><p>Weka jina la akaunti yako ili lionekane kwenye dashibodi yako.</p></div>
+      <div className="content-head"><h1>Instagram account</h1><p>Add your username so it appears on your dashboard.</p></div>
       {message && <div className="auth-success">{message}</div>}
 
       <div className="panel">
@@ -62,29 +62,29 @@ export default function ConnectPage() {
             <div className="connect-icon"><AtSign size={20} /></div>
             <div>
               <h3 style={{ marginBottom: 4 }}>@{savedName}</h3>
-              <p style={{ margin: 0, fontSize: ".86rem" }}>Jina hili linaonyeshwa kwenye muhtasari wako na uchanganuzi.</p>
+              <p style={{ margin: 0, fontSize: ".86rem" }}>This username appears on your overview and analytics.</p>
             </div>
-            <a className="btn btn-outline" href={`https://www.instagram.com/${savedName}/`} target="_blank" rel="noreferrer">Fungua wasifu <ArrowUpRight size={15} /></a>
+            <a className="btn btn-outline" href={`https://www.instagram.com/${savedName}/`} target="_blank" rel="noreferrer">Open profile <ArrowUpRight size={15} /></a>
           </div>
         ) : (
           <div className="connect-card">
             <div className="connect-icon"><AtSign size={20} /></div>
-            <div><h3 style={{ marginBottom: 4 }}>Hakuna akaunti iliyowekwa</h3><p style={{ margin: 0, fontSize: ".86rem" }}>Ingiza jina la mtumiaji la Instagram ili kuanza.</p></div>
+            <div><h3 style={{ marginBottom: 4 }}>No account set</h3><p style={{ margin: 0, fontSize: ".86rem" }}>Enter your Instagram username to get started.</p></div>
           </div>
         )}
       </div>
 
       <form onSubmit={save}>
         <div className="panel">
-          <h3>Weka jina la akaunti</h3>
+          <h3>Set your username</h3>
           <div className="field">
-            <label htmlFor="ig-username">Jina la mtumiaji la Instagram</label>
-            <input id="ig-username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="jina-lako-la-instagram" required disabled={saving} />
+            <label htmlFor="ig-username">Instagram username</label>
+            <input id="ig-username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="your-instagram-name" required disabled={saving} />
           </div>
           <button className="btn btn-primary" type="submit" disabled={saving || loading}>
-            {saving ? <><Loader2 size={17} className="spin" /> Inahifadhi...</> : "Hifadhi jina"}
+            {saving ? <><Loader2 size={17} className="spin" /> Saving...</> : "Save username"}
           </button>
-          <p className="hint">Hatuhitaji nenosiri lako wala ruhusa ya Meta. Tunatumia jina unaloingiza tu.</p>
+          <p className="hint">We never need your password or Meta permissions. We only use the name you enter.</p>
         </div>
       </form>
     </>

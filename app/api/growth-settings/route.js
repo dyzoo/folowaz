@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 
 export async function GET() {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unahitaji kuingia." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "You must sign in." }, { status: 401 });
 
   const rows = await sql`select * from public.growth_settings where user_id = ${user.id}::uuid limit 1`;
   return NextResponse.json({ settings: rows[0] || null });
@@ -12,7 +12,7 @@ export async function GET() {
 
 export async function PUT(request) {
   const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unahitaji kuingia." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "You must sign in." }, { status: 401 });
 
   const body = await request.json();
   const list = (value) => Array.isArray(value) ? value.filter(Boolean) : [];

@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 export default function SettingsPage() {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
-  const [language, setLanguage] = useState("sw");
+  const [language, setLanguage] = useState("en");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [notice, setNotice] = useState("");
@@ -22,7 +22,7 @@ export default function SettingsPage() {
         if (!user) return;
         setFullName(user.full_name || "");
         setUsername(user.instagram_username || "");
-        setLanguage(user.language || "sw");
+        setLanguage(user.language || "en");
       } finally {
         setLoading(false);
       }
@@ -41,9 +41,9 @@ export default function SettingsPage() {
         body: JSON.stringify({ fullName, instagramUsername: username, language }),
       });
       const data = await response.json();
-      setNotice(response.ok ? "Wasifu umesahihishwa." : data.error);
+      setNotice(response.ok ? "Profile updated." : data.error);
     } catch {
-      setNotice("Hitilafu ya mtandao. Tafadhali jaribu tena.");
+      setNotice("Network error. Please try again.");
     } finally {
       setSavingProfile(false);
     }
@@ -60,10 +60,10 @@ export default function SettingsPage() {
         body: JSON.stringify({ subject, message }),
       });
       const data = await response.json();
-      setNotice(response.ok ? "Tumepokea ujumbe wako. Timu yetu itakujibu hivi karibuni." : data.error);
+      setNotice(response.ok ? "We received your message. Our team will get back to you shortly." : data.error);
       if (response.ok) { setSubject(""); setMessage(""); }
     } catch {
-      setNotice("Hitilafu ya mtandao. Tafadhali jaribu tena.");
+      setNotice("Network error. Please try again.");
     } finally {
       setSendingTicket(false);
     }
@@ -71,11 +71,11 @@ export default function SettingsPage() {
 
   return (
     <>
-      <div className="content-head"><h1>Mipangilio</h1><p>Sasisha wasifu wako na uwasiliane na timu yetu.</p></div>
+      <div className="content-head"><h1>Settings</h1><p>Update your profile and contact our support team.</p></div>
       {notice && <div className="auth-success">{notice}</div>}
       <form onSubmit={saveProfile}>
         <div className="panel">
-          <h3>Wasifu</h3>
+          <h3>Profile</h3>
           {loading ? (
             <div className="skeleton-stack">
               <div className="skeleton skeleton-line" />
@@ -84,23 +84,23 @@ export default function SettingsPage() {
             </div>
           ) : (
             <>
-              <div className="field"><label>Jina kamili</label><input value={fullName} onChange={(e) => setFullName(e.target.value)} required disabled={savingProfile} /></div>
-              <div className="field"><label>Jina la mtumiaji</label><input value={username} onChange={(e) => setUsername(e.target.value)} disabled={savingProfile} /></div>
-              <div className="field"><label>Lugha</label><select value={language} onChange={(e) => setLanguage(e.target.value)} disabled={savingProfile}><option value="sw">Kiswahili</option><option value="en">English</option></select></div>
+              <div className="field"><label>Full name</label><input value={fullName} onChange={(e) => setFullName(e.target.value)} required disabled={savingProfile} /></div>
+              <div className="field"><label>Username</label><input value={username} onChange={(e) => setUsername(e.target.value)} disabled={savingProfile} /></div>
+              <div className="field"><label>Language</label><select value={language} onChange={(e) => setLanguage(e.target.value)} disabled={savingProfile}><option value="en">English</option><option value="sw">Swahili</option></select></div>
             </>
           )}
           <button className="btn btn-primary" type="submit" disabled={loading || savingProfile}>
-            {savingProfile ? <><Loader2 size={17} className="spin" /> Inahifadhi...</> : "Hifadhi wasifu"}
+            {savingProfile ? <><Loader2 size={17} className="spin" /> Saving...</> : "Save profile"}
           </button>
         </div>
       </form>
       <form onSubmit={sendTicket}>
         <div className="panel">
-          <h3>Wasiliana na msaada</h3>
-          <div className="field"><label>Mada</label><input value={subject} onChange={(e) => setSubject(e.target.value)} required disabled={sendingTicket} /></div>
-          <div className="field"><label>Ujumbe</label><textarea value={message} onChange={(e) => setMessage(e.target.value)} required disabled={sendingTicket} /></div>
+          <h3>Contact support</h3>
+          <div className="field"><label>Subject</label><input value={subject} onChange={(e) => setSubject(e.target.value)} required disabled={sendingTicket} /></div>
+          <div className="field"><label>Message</label><textarea value={message} onChange={(e) => setMessage(e.target.value)} required disabled={sendingTicket} /></div>
           <button className="btn btn-outline" type="submit" disabled={sendingTicket}>
-            {sendingTicket ? <><Loader2 size={17} className="spin" /> Inatuma...</> : "Tuma ujumbe"}
+            {sendingTicket ? <><Loader2 size={17} className="spin" /> Sending...</> : "Send message"}
           </button>
         </div>
       </form>

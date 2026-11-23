@@ -29,14 +29,15 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Imeshindwa kuingia.");
+        setError(data.error || "Sign in failed.");
+        setLoading(false);
         return;
       }
 
       router.push(nextPath);
       router.refresh();
     } catch {
-      setError("Hitilafu ya mtandao. Tafadhali jaribu tena.");
+      setError("Network error. Please try again.");
       setLoading(false);
     }
   }
@@ -45,16 +46,16 @@ export default function LoginPage() {
     <main className="auth-page">
       <div className="auth-card">
         <Link href="/" className="brand"><span className="brand-mark">f</span><span className="brand-name">Folowaz</span></Link>
-        <h1>Karibu tena</h1>
-        <p>Ingia kwenye dashibodi yako ya ukuaji.</p>
-        {!isDatabaseConfigured && <div className="setup-note">Database bado haijaunganishwa. Weka <code>DATABASE_URL</code> kwenye <code>.env.local</code>.</div>}
+        <h1>Welcome back</h1>
+        <p>Sign in to your growth dashboard.</p>
+        {!isDatabaseConfigured && <div className="setup-note">Database is not connected yet. Set <code>DATABASE_URL</code> in <code>.env.local</code>.</div>}
         {error && <div className="auth-error">{error}</div>}
         <form onSubmit={submit}>
-          <div className="field"><label htmlFor="email">Barua pepe</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="wewe@mfano.com" required /></div>
-          <div className="field"><label htmlFor="password">Nenosiri</label><input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required /></div>
-          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? <><Loader2 size={17} className="spin" /> Ingia...</> : "Ingia"}</button>
+          <div className="field"><label htmlFor="email">Email</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required /></div>
+          <div className="field"><label htmlFor="password">Password</label><input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required /></div>
+          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? <><Loader2 size={17} className="spin" /> Signing in...</> : "Sign in"}</button>
         </form>
-        <p className="auth-switch">Huna akaunti? <Link href="/signup">Jisajili bure</Link></p>
+        <p className="auth-switch">No account? <Link href="/signup">Sign up free</Link></p>
       </div>
     </main>
   );

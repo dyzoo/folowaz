@@ -11,5 +11,5 @@ export default function LogoutButton() {
     router.refresh();
   }
 
-  return <a href="#" onClick={(event) => { event.preventDefault(); logout(); }}>↪ Toka</a>;
+  return <a href="#" onClick={(event) => { event.preventDefault(); logout(); }}>↪ Log out</a>;
 }

@@ -7,12 +7,12 @@ import {
 } from "lucide-react";
 
 const items = [
-  ["/dashboard", LayoutDashboard, "Muhtasari"],
-  ["/dashboard/connect", AtSign, "Akaunti ya Instagram"],
-  ["/dashboard/targeting", Target, "Ulengaji"],
-  ["/dashboard/analytics", BarChart3, "Uchanganuzi"],
-  ["/dashboard/billing", CreditCard, "Malipo na mpango"],
-  ["/dashboard/settings", Settings, "Mipangilio"],
+  ["/dashboard", LayoutDashboard, "Overview"],
+  ["/dashboard/connect", AtSign, "Instagram account"],
+  ["/dashboard/targeting", Target, "Targeting"],
+  ["/dashboard/analytics", BarChart3, "Analytics"],
+  ["/dashboard/billing", CreditCard, "Billing & plan"],
+  ["/dashboard/settings", Settings, "Settings"],
 ];
 
 export default function DashboardNav() {
