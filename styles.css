@@ -95,6 +95,27 @@ body > * { animation: pageIn .5s ease both; }
 }
 .reveal { opacity: 0; transform: translateY(22px); filter: blur(6px); transition: opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1), filter .7s cubic-bezier(.22,1,.36,1); }
 .reveal-visible { opacity: 1; transform: none; filter: blur(0); }
+html.page-loading body > *:not(.page-loader),
+html.page-loading .clone-intro > *,
+html.page-loading .hero-copy > *,
+html.page-loading .hero-visual,
+html.page-loading .clone-flow,
+html.page-loading .boost-card-head > *,
+html.page-loading .clone-form > *,
+html.page-loading .clone-platform,
+html.page-loading .clone-price,
+html.page-loading .audience-card,
+html.page-loading .clone-order,
+html.page-loading .payment-method,
+html.page-loading .clone-trust span,
+html.page-loading .clone-progress .clone-step,
+html.page-loading .auth-card,
+html.page-loading .content-head,
+html.page-loading .panel,
+html.page-loading .metric,
+html.page-loading .chart-bar,
+html.page-loading .announcement-inner { animation-play-state: paused; }
+html.page-loading .reveal-visible { opacity: 0; transform: translateY(22px); filter: blur(6px); }
 .site-header { transition: background .3s, box-shadow .3s, transform .4s cubic-bezier(.22,1,.36,1); }
 .site-header.scrolled { background: rgba(255,249,245,.97); box-shadow: 0 8px 30px rgba(61,25,124,.1); }
 .site-header.header-hidden { transform: translateY(-100%); }
@@ -113,6 +134,21 @@ body > * { animation: pageIn .5s ease both; }
 .clone-trust span:nth-child(2), .clone-progress .clone-step:nth-child(2) { animation-delay: .42s; }
 .clone-trust span:nth-child(3), .clone-progress .clone-step:nth-child(3) { animation-delay: .49s; }
 .clone-progress .clone-step:nth-child(4) { animation-delay: .56s; }
+.clone-intro > * { animation: fadeUp .6s cubic-bezier(.22,1,.36,1) backwards; }
+.clone-intro > *:nth-child(2) { animation-delay: .08s; }
+.clone-intro > *:nth-child(3) { animation-delay: .16s; }
+.clone-intro > *:nth-child(4) { animation-delay: .24s; }
+.boost-card-head > * { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) backwards; }
+.boost-card-head > *:nth-child(2) { animation-delay: .06s; }
+.boost-card-head > *:nth-child(3) { animation-delay: .12s; }
+.clone-form > * { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) backwards; }
+.clone-form > *:nth-child(2) { animation-delay: .05s; }
+.clone-form > *:nth-child(3) { animation-delay: .1s; }
+.clone-form > *:nth-child(4) { animation-delay: .15s; }
+.clone-order, .payment-method { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) backwards; }
+.clone-order { animation-delay: .08s; }
+.payment-methods .payment-method:nth-child(1) { animation-delay: .14s; }
+.payment-methods .payment-method:nth-child(2) { animation-delay: .2s; }
 
 /* ============ Buttons & pills ============ */
 .btn {

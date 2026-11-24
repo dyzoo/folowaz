@@ -9,16 +9,20 @@ export default function PageLoader() {
   const loading = loadedPath !== pathname;
 
   useEffect(() => {
+    const root = document.documentElement;
     const previousOverflow = document.body.style.overflow;
+    root.classList.add("page-loading");
     document.body.style.overflow = "hidden";
 
     const timer = window.setTimeout(() => {
+      root.classList.remove("page-loading");
       document.body.style.overflow = previousOverflow;
       setLoadedPath(pathname);
     }, 4000);
 
     return () => {
       window.clearTimeout(timer);
+      root.classList.remove("page-loading");
       document.body.style.overflow = previousOverflow;
     };
   }, [pathname]);
