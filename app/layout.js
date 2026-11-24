@@ -1,5 +1,6 @@
 import "../styles.css";
 import "./platform.css";
+import PageLoader from "@/components/PageLoader";
 
 export const metadata = {
   title: "Folowaz | Social Media Boost Checker",
@@ -11,7 +12,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <PageLoader />
+        {children}
+      </body>
     </html>
   );
 }

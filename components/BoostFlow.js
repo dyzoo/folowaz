@@ -2,24 +2,27 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft, ArrowRight, AtSign, Briefcase, Camera, Check, CheckCircle2, CreditCard, Globe,
-  Loader2, Music2, Package, Phone, Play, ShieldCheck, Smartphone, Star, Users, X, Zap,
+  ArrowLeft, ArrowRight, Briefcase, Check, CheckCircle2, CreditCard, Globe,
+  Loader2, Package, Phone, Play, ShieldCheck, Smartphone, Star, Users, X, Zap,
 } from "lucide-react";
+import {
+  FacebookIcon, InstagramIcon, LinkedinIcon, TikTokIcon, XIcon, YouTubeIcon,
+} from "@/components/BrandIcons";
 import ScrollEffects from "@/components/marketing/ScrollEffects";
 
 const platforms = [
-  { id: "instagram", name: "Instagram", icon: Camera, color: "#e1306c" },
-  { id: "tiktok", name: "TikTok", icon: Music2, color: "#111827" },
-  { id: "youtube", name: "YouTube", icon: Play, color: "#ff0033" },
-  { id: "x", name: "X", icon: AtSign, color: "#111827" },
-  { id: "facebook", name: "Facebook", icon: Users, color: "#1877f2" },
-  { id: "linkedin", name: "LinkedIn", icon: Briefcase, color: "#0a66c2" },
+  { id: "instagram", name: "Instagram", icon: InstagramIcon, color: "#ff0069" },
+  { id: "tiktok", name: "TikTok", icon: TikTokIcon, color: "#010101" },
+  { id: "youtube", name: "YouTube", icon: YouTubeIcon, color: "#ff0000" },
+  { id: "x", name: "X", icon: XIcon, color: "#000000" },
+  { id: "facebook", name: "Facebook", icon: FacebookIcon, color: "#0866ff" },
+  { id: "linkedin", name: "LinkedIn", icon: LinkedinIcon, color: "#0a66c2" },
 ];
 
 const packages = [
-  { id: "boost5k", followers: "5K", amount: "TZS 5,000", label: "5,000 followers", badge: "Starter", perk: "Good for a quick test" },
-  { id: "boost10k", followers: "10K", amount: "TZS 15,000", label: "10,000 followers", badge: "Most popular", perk: "Best balance of reach and price", featured: true },
-  { id: "boost20k", followers: "20K", amount: "TZS 25,000", label: "20,000 followers", badge: "Best value", perk: "Maximum growth for campaigns" },
+  { id: "boost5k", count: 5000, followers: "5K", amount: "TZS 5,000", badge: "Starter", perk: "Good for a quick test" },
+  { id: "boost10k", count: 10000, followers: "10K", amount: "TZS 15,000", badge: "Most popular", perk: "Best balance of reach and price", featured: true },
+  { id: "boost20k", count: 20000, followers: "20K", amount: "TZS 25,000", badge: "Best value", perk: "Maximum growth for campaigns" },
 ];
 
 const steps = [
@@ -54,6 +57,8 @@ function Progress({ step }) {
 export default function BoostFlow() {
   const [step, setStep] = useState(0);
   const [platform, setPlatform] = useState(null);
+  const [facebookAudience, setFacebookAudience] = useState("");
+  const [youtubeGoal, setYoutubeGoal] = useState("");
   const [username, setUsername] = useState("");
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [phone, setPhone] = useState("");
@@ -73,6 +78,22 @@ export default function BoostFlow() {
   const ctaRef = useRef(null);
   const PlatformIcon = platform?.icon;
   const failed = finalStatuses.includes(paymentStatus) && paymentStatus !== "paid";
+  const deliveryUnit =
+    platform?.id === "facebook"
+      ? facebookAudience === "followers" ? "followers" : "friends"
+      : platform?.id === "youtube"
+        ? youtubeGoal || "subscribers"
+        : "followers";
+  const deliveryDetail =
+    platform?.id === "facebook"
+      ? facebookAudience === "followers" ? "Followers (page / professional)" : "Friends (personal account)"
+      : platform?.id === "youtube"
+        ? youtubeGoal === "views" ? "Views" : "Subscribers"
+        : "Followers";
+  const audienceReady =
+    (platform?.id !== "facebook" || Boolean(facebookAudience)) &&
+    (platform?.id !== "youtube" || Boolean(youtubeGoal));
+  const packageLabel = (item) => `${item.count.toLocaleString()} ${deliveryUnit}`;
 
   useEffect(() => () => {
     clearTimeout(timer.current);
@@ -89,7 +110,7 @@ export default function BoostFlow() {
 
   const checkAccount = (event) => {
     event.preventDefault();
-    if (!username.trim()) return;
+    if (!username.trim() || !audienceReady) return;
     setChecking(true);
     timer.current = setTimeout(() => {
       setChecking(false);
@@ -187,6 +208,8 @@ export default function BoostFlow() {
     stopPolling();
     setStep(0);
     setPlatform(null);
+    setFacebookAudience("");
+    setYoutubeGoal("");
     setUsername("");
     setSelectedPackage(null);
     setPhone("");
@@ -204,6 +227,13 @@ export default function BoostFlow() {
     if (step === 1) setStep(0);
     else if (step === 2 || step === 3) setStep(1);
     else if (step === 4) setStep(3);
+  };
+
+  const selectPlatform = (item) => {
+    setPlatform(item);
+    setFacebookAudience("");
+    setYoutubeGoal("");
+    setStep(1);
   };
 
   const selectPackage = (item) => {
@@ -269,7 +299,7 @@ export default function BoostFlow() {
                           type="button"
                           key={id}
                           className={`step-card clone-platform ${cardClasses[index % cardClasses.length]}`}
-                          onClick={() => { setPlatform({ id, name, color }); setStep(1); }}
+                          onClick={() => selectPlatform({ id, name, icon: Icon, color })}
                         >
                           <div className="step-label">PLATFORM {String(index + 1).padStart(2, "0")}</div>
                           <span className="clone-platform-icon" style={{ background: color }}><Icon size={26} /></span>
@@ -296,6 +326,49 @@ export default function BoostFlow() {
                         </span>
                         {platform?.name}
                       </div>
+
+                      {platform?.id === "facebook" && (
+                        <div className="audience-options">
+                          <div className="audience-head">
+                            <strong>What do you want to grow?</strong>
+                            <p>Personal accounts receive friends. Pages and professional accounts receive followers.</p>
+                          </div>
+                          <div className="audience-grid">
+                            <button type="button" className={`audience-card ${facebookAudience === "friends" ? "selected" : ""}`} onClick={() => setFacebookAudience("friends")}>
+                              <Users size={20} />
+                              <span><strong>Personal account</strong><small>You will receive friends</small></span>
+                              {facebookAudience === "friends" && <Check size={16} className="audience-check" />}
+                            </button>
+                            <button type="button" className={`audience-card ${facebookAudience === "followers" ? "selected" : ""}`} onClick={() => setFacebookAudience("followers")}>
+                              <Briefcase size={20} />
+                              <span><strong>Page / professional</strong><small>You will receive followers</small></span>
+                              {facebookAudience === "followers" && <Check size={16} className="audience-check" />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {platform?.id === "youtube" && (
+                        <div className="audience-options">
+                          <div className="audience-head">
+                            <strong>Choose what you want to grow</strong>
+                            <p>Select one option to continue with your YouTube boost.</p>
+                          </div>
+                          <div className="audience-grid">
+                            <button type="button" className={`audience-card ${youtubeGoal === "subscribers" ? "selected" : ""}`} onClick={() => setYoutubeGoal("subscribers")}>
+                              <Users size={20} />
+                              <span><strong>Subscribers</strong><small>Grow your channel audience</small></span>
+                              {youtubeGoal === "subscribers" && <Check size={16} className="audience-check" />}
+                            </button>
+                            <button type="button" className={`audience-card ${youtubeGoal === "views" ? "selected" : ""}`} onClick={() => setYoutubeGoal("views")}>
+                              <Play size={20} />
+                              <span><strong>Views</strong><small>Get more views on your videos</small></span>
+                              {youtubeGoal === "views" && <Check size={16} className="audience-check" />}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="input-wrap clone-input">
                         <span className="at-sign">@</span>
                         <input
@@ -307,7 +380,8 @@ export default function BoostFlow() {
                            required
                          />
                       </div>
-                      <button type="submit" className="btn btn-primary btn-lg" disabled={checking} ref={ctaRef}>
+                      {!audienceReady && <span className="audience-hint">Select an option above to continue.</span>}
+                      <button type="submit" className="btn btn-primary btn-lg" disabled={checking || !audienceReady} ref={ctaRef}>
                         {checking ? <><Loader2 size={18} className="spin" /> Checking account...</> : <>Check account <ArrowRight size={17} /></>}
                       </button>
                     </form>
@@ -332,7 +406,7 @@ export default function BoostFlow() {
                       <div className="guarantee-content">
                         <div className="pill clone-success-pill"><Check size={14} /> Check complete</div>
                         <h2>Account is eligible for boosting</h2>
-                        <p>We found <strong>@{username}</strong> on {platform?.name}. This account can be boosted with one of the packages below.</p>
+                        <p>We found <strong>@{username}</strong> on {platform?.name}. You can receive {deliveryDetail.toLowerCase()} with one of the packages below.</p>
                         <div className="clone-success-chips">
                           <span><Check size={14} /> Public profile detected</span>
                           <span><Check size={14} /> Eligible for growth</span>
@@ -351,8 +425,8 @@ export default function BoostFlow() {
                     <button type="button" className="back-link" onClick={back}><ArrowLeft size={15} /> Back to account</button>
                     <div className="boost-card-head">
                       <span className="step-kicker">Step 3 of 4</span>
-                      <h2>Choose your followers package</h2>
-                      <p>Select how many followers you want for <strong>@{username}</strong> on {platform?.name}.</p>
+                      <h2>Choose your {deliveryUnit} package</h2>
+                      <p>Select how many {deliveryUnit} you want for <strong>@{username}</strong> on {platform?.name}.</p>
                     </div>
                     <div className="pricing-grid clone-packages">
                       {packages.map((item) => (
@@ -364,7 +438,7 @@ export default function BoostFlow() {
                         >
                           <span className="price-badge">{item.badge}</span>
                           <div className="clone-count">{item.followers}</div>
-                          <h3>{item.label}</h3>
+                          <h3>{packageLabel(item)}</h3>
                           <p className="price-desc">{item.perk}</p>
                           <div className="clone-amount">{item.amount}</div>
                           <span className="clone-select">
@@ -390,7 +464,8 @@ export default function BoostFlow() {
                     <div className="panel clone-order">
                       <div><span>Platform</span><strong>{platform?.name}</strong></div>
                       <div><span>Username</span><strong>@{username}</strong></div>
-                      <div><span>Package</span><strong>{selectedPackage?.label}</strong></div>
+                      <div><span>Delivery</span><strong>{deliveryDetail}</strong></div>
+                      <div><span>Package</span><strong>{selectedPackage ? packageLabel(selectedPackage) : ""}</strong></div>
                       <div className="clone-order-total"><span>Amount</span><strong>{selectedPackage?.amount}</strong></div>
                     </div>
                     <div className="payment-methods">
@@ -472,10 +547,10 @@ export default function BoostFlow() {
                       <h2>{paymentStatus === "paid" ? "Your boost is confirmed" : failed ? "Payment needs attention" : "Check your phone to confirm"}</h2>
                       <p>
                         {paymentStatus === "paid"
-                          ? <>Your {selectedPackage?.label} boost for <strong>@{username}</strong> on {platform?.name} is confirmed. Reference: <strong>{reference}</strong>.</>
+                          ? <>Your {selectedPackage ? packageLabel(selectedPackage) : ""} boost for <strong>@{username}</strong> on {platform?.name} is confirmed. Reference: <strong>{reference}</strong>.</>
                           : failed
                             ? <>The payment was {paymentStatus}. Reference: <strong>{reference}</strong>. Please start a new request to try again.</>
-                            : <>We sent a payment prompt to <strong>{phone}</strong>. Open it on your phone and confirm with your PIN to complete your {selectedPackage?.label} boost.</>}
+                            : <>We sent a payment prompt to <strong>{phone}</strong>. Open it on your phone and confirm with your PIN to complete your {selectedPackage ? packageLabel(selectedPackage) : ""} boost.</>}
                       </p>
                       {paymentMessage && (
                         <div className="clone-prompt-note">
