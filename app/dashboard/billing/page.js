@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CreditCard, Loader2, Smartphone } from "lucide-react";
+import { MastercardLogo, VisaLogo } from "@/components/BrandIcons";
 
 const planCards = [
   { key: "basic", name: "Basic", price: 19000, limit: "1,000 followers / month" },
@@ -175,11 +176,12 @@ export default function BillingPage() {
           <div className="payment-methods">
             <button type="button" className={`payment-method ${method === "mobile" ? "selected" : ""}`} onClick={() => setMethod("mobile")}>
               <Smartphone size={22} />
-              <span><strong>Mobile money</strong><small>M-Pesa, Mixx by Yas, Airtel Money</small></span>
+              <span><strong>Mobile money</strong><small>M-Pesa, Mixx by Yas, Airtel Money, Halopesa</small></span>
             </button>
             <button type="button" className={`payment-method ${method === "card" ? "selected" : ""}`} onClick={() => setMethod("card")}>
               <CreditCard size={22} />
               <span><strong>Card</strong><small>Visa or Mastercard via secure checkout</small></span>
+              <span className="card-brands"><VisaLogo size={40} /><MastercardLogo size={30} /></span>
             </button>
           </div>
           <div className="field">

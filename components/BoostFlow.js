@@ -6,7 +6,7 @@ import {
   Loader2, Package, Phone, Play, ShieldCheck, Smartphone, Star, Users, X, Zap,
 } from "lucide-react";
 import {
-  FacebookIcon, InstagramIcon, LinkedinIcon, TikTokIcon, XIcon, YouTubeIcon,
+  FacebookIcon, InstagramIcon, LinkedinIcon, MastercardLogo, TikTokIcon, VisaLogo, XIcon, YouTubeIcon,
 } from "@/components/BrandIcons";
 import ScrollEffects from "@/components/marketing/ScrollEffects";
 
@@ -471,11 +471,12 @@ export default function BoostFlow() {
                     <div className="payment-methods">
                       <button type="button" className={`payment-method ${paymentMethod === "mobile" ? "selected" : ""}`} onClick={() => setPaymentMethod("mobile")}>
                         <Smartphone size={22} />
-                        <span><strong>Mobile money</strong><small>M-Pesa, Mixx by Yas, Airtel Money</small></span>
+                        <span><strong>Mobile money</strong><small>M-Pesa, Mixx by Yas, Airtel Money, Halopesa</small></span>
                       </button>
                       <button type="button" className={`payment-method ${paymentMethod === "card" ? "selected" : ""}`} onClick={() => setPaymentMethod("card")}>
                         <CreditCard size={22} />
                         <span><strong>Card</strong><small>Visa / Mastercard, 3-D Secure</small></span>
+                        <span className="card-brands"><VisaLogo size={40} /><MastercardLogo size={30} /></span>
                       </button>
                     </div>
                     <form className="clone-form" onSubmit={submitPayment}>

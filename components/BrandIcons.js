@@ -1,3 +1,7 @@
+"use client";
+
+import { useId } from "react";
+
 function BrandIcon({ path, size = 24, className }) {
   return (
     <svg
@@ -28,6 +32,8 @@ const paths = {
     "M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z",
   linkedin:
     "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z",
+  visa:
+    "M9.112 8.262L5.97 15.758H3.92L2.374 9.775c-.094-.368-.175-.503-.461-.658C1.447 8.864.677 8.627 0 8.479l.046-.217h3.3a.904.904 0 01.894.764l.817 4.338 2.018-5.102zm8.033 5.049c.008-1.979-2.736-2.088-2.717-2.972.006-.269.262-.555.822-.628a3.66 3.66 0 011.913.336l.34-1.59a5.207 5.207 0 00-1.814-.333c-1.917 0-3.266 1.02-3.278 2.479-.012 1.079.963 1.68 1.698 2.04.756.367 1.01.603 1.006.931-.005.504-.602.725-1.16.734-.975.015-1.54-.263-1.992-.473l-.351 1.642c.453.208 1.289.39 2.156.398 2.037 0 3.37-1.006 3.377-2.564m5.061 2.447H24l-1.565-7.496h-1.656a.883.883 0 00-.826.55l-2.909 6.946h2.036l.405-1.12h2.488zm-2.163-2.656l1.02-2.815.588 2.815zm-8.16-4.84l-1.603 7.496H8.34l1.605-7.496z",
 };
 
 export function InstagramIcon(props) {
@@ -52,4 +58,44 @@ export function XIcon(props) {
 
 export function LinkedinIcon(props) {
   return <BrandIcon path={paths.linkedin} {...props} />;
+}
+
+export function VisaLogo({ size = 40, className }) {
+  return (
+    <svg
+      width={size}
+      height={size * 0.45}
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={paths.visa} fill="#1a1f71" />
+    </svg>
+  );
+}
+
+export function MastercardLogo({ size = 30, className }) {
+  const clipId = `mastercard-overlap-${useId().replace(/:/g, "")}`;
+  return (
+    <svg
+      width={size}
+      height={size * 0.62}
+      viewBox="0 0 36 24"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="13" cy="12" r="9" fill="#eb001b" />
+      <circle cx="23" cy="12" r="9" fill="#f79e1b" />
+      <circle cx="13" cy="12" r="9" fill="#ff5f00" clipPath={`url(#${clipId})`} />
+      <defs>
+        <clipPath id={clipId}>
+          <circle cx="23" cy="12" r="9" />
+        </clipPath>
+      </defs>
+    </svg>
+  );
 }
