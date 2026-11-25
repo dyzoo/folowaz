@@ -43,7 +43,7 @@ create table if not exists public.subscriptions (
   user_id uuid not null unique references public.users(id) on delete cascade,
   plan text not null,
   status text not null default 'inactive',
-  noripesa_reference text,
+  settlo_payment_id text,
   current_period_end timestamptz,
   created_at timestamptz not null default now()
 );
@@ -52,8 +52,8 @@ create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
   merchant_reference text not null unique,
-  noripesa_reference text unique,
-  payment_method text not null default 'mobile',
+  settlo_payment_id text,
+  payment_method text not null default 'mobile_money',
   phone text,
   checkout_url text,
   plan text not null,
@@ -75,3 +75,5 @@ create table if not exists public.support_tickets (
 
 create index if not exists analytics_user_date_idx on public.analytics_snapshots (user_id, recorded_on);
 create index if not exists orders_user_idx on public.orders (user_id, created_at desc);
+create unique index if not exists orders_settlo_payment_id_idx on public.orders (settlo_payment_id);
+create index if not exists subscriptions_settlo_payment_id_idx on public.subscriptions (settlo_payment_id);

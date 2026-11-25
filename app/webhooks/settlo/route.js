@@ -1,11 +1,22 @@
 import { NextResponse } from "next/server";
-import { verifyWebhookSignature } from "@/lib/noripesa";
+import { verifyWebhookSignature } from "@/lib/settlopay";
 import { syncPayment } from "@/lib/payments";
+
+const seenEvents = new Map();
+const maxSeenEvents = 1000;
+
+function rememberEvent(eventId) {
+  if (!eventId || seenEvents.has(eventId)) return;
+  if (seenEvents.size >= maxSeenEvents) {
+    const oldest = seenEvents.keys().next().value;
+    seenEvents.delete(oldest);
+  }
+  seenEvents.set(eventId, Date.now());
+}
 
 export async function POST(request) {
   const rawBody = await request.text();
-  const signature = request.headers.get("x-noripesa-signature");
-  const eventName = request.headers.get("x-noripesa-event");
+  const signature = request.headers.get("settlo-signature");
 
   if (!verifyWebhookSignature(rawBody, signature)) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -18,17 +29,24 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
-  if (eventName && eventName !== "payment.updated") {
+  const eventId = request.headers.get("settlo-event-id") || event?.id;
+  if (eventId && seenEvents.has(eventId)) {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
+  if (event?.type && !event.type.startsWith("payment_intent.")) {
+    rememberEvent(eventId);
     return NextResponse.json({ received: true });
   }
 
-  const reference = event?.data?.reference || event?.data?.merchant_reference;
+  const reference = event?.data?.id || event?.data?.external_id || event?.data?.merchant_reference;
   if (!reference) {
     return NextResponse.json({ error: "Reference is missing" }, { status: 400 });
   }
 
   try {
     const result = await syncPayment(reference);
+    rememberEvent(eventId);
     return NextResponse.json({ received: true, status: result.orderStatus });
   } catch (error) {
     return NextResponse.json({

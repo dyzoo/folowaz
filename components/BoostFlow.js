@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowLeft, ArrowRight, Briefcase, Check, CheckCircle2, CreditCard, Globe,
+  ArrowLeft, ArrowRight, Briefcase, Check, CheckCircle2, Globe,
   Loader2, Package, Phone, Play, ShieldCheck, Smartphone, Star, Users, X, Zap,
 } from "lucide-react";
 import {
-  FacebookIcon, InstagramIcon, LinkedinIcon, MastercardLogo, TikTokIcon, VisaLogo, XIcon, YouTubeIcon,
+  FacebookIcon, InstagramIcon, LinkedinIcon, TikTokIcon, XIcon, YouTubeIcon,
 } from "@/components/BrandIcons";
 import ScrollEffects from "@/components/marketing/ScrollEffects";
 
@@ -33,8 +33,19 @@ const steps = [
 ];
 
 const cardClasses = ["card-coral", "card-violet", "card-pink"];
-const statusMap = { success: "paid", failed: "failed", cancelled: "cancelled", expired: "expired" };
-const finalStatuses = ["paid", "failed", "cancelled", "expired"];
+const statusMap = {
+  SUCCEEDED: "paid",
+  CHARGEBACK_WON: "paid",
+  PARTIALLY_REFUNDED: "paid",
+  DISPUTED: "processing",
+  REFUNDED: "refunded",
+  BLOCKED: "failed",
+  FAILED: "failed",
+  EXPIRED: "expired",
+  CANCELLED: "cancelled",
+  CHARGEBACK_LOST: "failed",
+};
+const finalStatuses = ["paid", "failed", "cancelled", "expired", "refunded"];
 
 function Progress({ step }) {
   const current = step === 0 ? 0 : step === 1 || step === 2 ? 1 : step === 3 ? 2 : 3;
@@ -62,9 +73,6 @@ export default function BoostFlow() {
   const [username, setUsername] = useState("");
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [phone, setPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("mobile");
-  const [cardName, setCardName] = useState("");
-  const [cardEmail, setCardEmail] = useState("");
   const [checking, setChecking] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [reference, setReference] = useState("");
@@ -156,7 +164,6 @@ export default function BoostFlow() {
   async function submitPayment(event) {
     event.preventDefault();
     if (phone.trim().length < 9) return;
-    if (paymentMethod === "card" && (!cardName.trim() || !cardEmail.includes("@"))) return;
     setProcessing(true);
     setPaymentError("");
     setPaymentMessage("");
@@ -169,10 +176,8 @@ export default function BoostFlow() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: selectedPackage?.id,
-          method: paymentMethod,
+          method: "mobile",
           phone,
-          fullName: paymentMethod === "card" ? cardName : "",
-          email: paymentMethod === "card" ? cardEmail : "",
         }),
       });
       const data = await response.json();
@@ -187,12 +192,6 @@ export default function BoostFlow() {
       setReference(nextReference);
       setPaymentMessage(data.message || (response.status === 202 ? data.error : "") || "");
       setPaymentStatus(nextStatus);
-
-      if (paymentMethod === "card") {
-        if (!data.checkoutUrl) throw new Error(data.error || "No payment link was returned.");
-        window.location.assign(data.checkoutUrl);
-        return;
-      }
 
       setStep(5);
       if (!finalStatuses.includes(nextStatus) && nextReference) startPolling(nextReference);
@@ -213,9 +212,6 @@ export default function BoostFlow() {
     setUsername("");
     setSelectedPackage(null);
     setPhone("");
-    setPaymentMethod("mobile");
-    setCardName("");
-    setCardEmail("");
     setReference("");
     setPaymentMessage("");
     setPaymentStatus("pending");
@@ -274,7 +270,7 @@ export default function BoostFlow() {
             <div className="section-head center clone-intro">
               <div className="pill pill-soft"><Star size={13} fill="currentColor" className="pill-star" /> 4.98/5 · 58,000+ checks</div>
               <h1>Boost any social account with <span className="gradient-text">smart growth</span>.</h1>
-              <p>Choose your network, check your username, pick a package, then pay with mobile money or card. No sign in or sign up needed.</p>
+              <p>Choose your network, check your username, pick a package, then pay securely with mobile money. No sign in or sign up needed.</p>
               <div className="clone-trust">
                 <span><ShieldCheck size={14} /> No password needed</span>
                 <span><Zap size={14} /> Instant results</span>
@@ -459,7 +455,7 @@ export default function BoostFlow() {
                     <div className="boost-card-head">
                       <span className="step-kicker">Step 4 of 4</span>
                       <h2>Choose how to pay</h2>
-                      <p>Mobile money sends a USSD prompt to your phone. Card payment opens a secure checkout.</p>
+                      <p>Mobile money sends an approval prompt to your phone. Confirm it with your PIN to complete payment.</p>
                     </div>
                     <div className="panel clone-order">
                       <div><span>Platform</span><strong>{platform?.name}</strong></div>
@@ -469,15 +465,10 @@ export default function BoostFlow() {
                       <div className="clone-order-total"><span>Amount</span><strong>{selectedPackage?.amount}</strong></div>
                     </div>
                     <div className="payment-methods">
-                      <button type="button" className={`payment-method ${paymentMethod === "mobile" ? "selected" : ""}`} onClick={() => setPaymentMethod("mobile")}>
+                      <div className="payment-method selected">
                         <Smartphone size={22} />
                         <span><strong>Mobile money</strong><small>M-Pesa, Mixx by Yas, Airtel Money, Halopesa</small></span>
-                      </button>
-                      <button type="button" className={`payment-method ${paymentMethod === "card" ? "selected" : ""}`} onClick={() => setPaymentMethod("card")}>
-                        <CreditCard size={22} />
-                        <span><strong>Card</strong><small>Visa / Mastercard, 3-D Secure</small></span>
-                        <span className="card-brands"><VisaLogo size={40} /><MastercardLogo size={30} /></span>
-                      </button>
+                      </div>
                     </div>
                     <form className="clone-form" onSubmit={submitPayment}>
                       <label htmlFor="phone">Phone number for payment</label>
@@ -492,35 +483,9 @@ export default function BoostFlow() {
                           required
                         />
                       </div>
-                      {paymentMethod === "card" && (
-                        <>
-                          <label htmlFor="card-name">Name on card</label>
-                          <div className="input-wrap clone-input">
-                            <input
-                              id="card-name"
-                              type="text"
-                              value={cardName}
-                              onChange={(event) => setCardName(event.target.value)}
-                              placeholder="Full name"
-                              required
-                            />
-                          </div>
-                          <label htmlFor="card-email">Email for receipt</label>
-                          <div className="input-wrap clone-input">
-                            <input
-                              id="card-email"
-                              type="email"
-                              value={cardEmail}
-                              onChange={(event) => setCardEmail(event.target.value)}
-                              placeholder="you@example.com"
-                              required
-                            />
-                          </div>
-                        </>
-                      )}
                       {paymentError && <div className="auth-error" role="alert">{paymentError}</div>}
                       <button type="submit" className="btn btn-primary btn-lg clone-full-btn" disabled={processing || phone.trim().length < 9} ref={ctaRef}>
-                        {processing ? <><Loader2 size={18} className="spin" /> Preparing payment...</> : paymentMethod === "card" ? "Continue to card checkout" : "Send mobile money prompt"}
+                        {processing ? <><Loader2 size={18} className="spin" /> Preparing payment...</> : "Send mobile money prompt"}
                       </button>
                       {processing && (
                         <div className="clone-loading" aria-live="polite">

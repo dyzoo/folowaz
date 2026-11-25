@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CreditCard, Loader2, Smartphone } from "lucide-react";
-import { MastercardLogo, VisaLogo } from "@/components/BrandIcons";
+import { Loader2, Smartphone } from "lucide-react";
 
 const planCards = [
   { key: "basic", name: "Basic", price: 19000, limit: "1,000 followers / month" },
@@ -10,7 +9,7 @@ const planCards = [
   { key: "turbo", name: "Turbo", price: 79000, limit: "10,000+ followers / month" },
 ];
 
-const finalStatuses = ["failed", "cancelled", "expired"];
+const finalStatuses = ["failed", "cancelled", "expired", "refunded"];
 
 function formatAmount(amount) {
   return `TZS ${Number(amount || 0).toLocaleString("en-TZ")}`;
@@ -21,7 +20,6 @@ export default function BillingPage() {
   const [orders, setOrders] = useState([]);
   const [user, setUser] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [method, setMethod] = useState("mobile");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -118,15 +116,10 @@ export default function BillingPage() {
       const response = await fetch("/api/payments/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: selectedPlan.key, method, phone }),
+        body: JSON.stringify({ plan: selectedPlan.key, method: "mobile", phone }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "The payment request failed.");
-
-      if (method === "card" && data.checkoutUrl) {
-        window.location.assign(data.checkoutUrl);
-        return;
-      }
 
       setNotice(`Payment request sent. Reference: ${data.reference}. ${data.message || "Check your phone to confirm."}`);
       startPolling(data.reference);
@@ -142,7 +135,7 @@ export default function BillingPage() {
     <>
       <div className="content-head">
         <h1>Billing & plan</h1>
-        <p>Choose a plan, then pay securely with mobile money or card.</p>
+        <p>Choose a plan, then pay securely with mobile money.</p>
       </div>
       {notice && <div className="auth-success">{notice}</div>}
       {error && <div className="auth-error">{error}</div>}
@@ -174,15 +167,10 @@ export default function BillingPage() {
         <div className="panel">
           <h3>Pay for {selectedPlan.name} · {formatAmount(selectedPlan.price)}</h3>
           <div className="payment-methods">
-            <button type="button" className={`payment-method ${method === "mobile" ? "selected" : ""}`} onClick={() => setMethod("mobile")}>
+            <div className="payment-method selected">
               <Smartphone size={22} />
               <span><strong>Mobile money</strong><small>M-Pesa, Mixx by Yas, Airtel Money, Halopesa</small></span>
-            </button>
-            <button type="button" className={`payment-method ${method === "card" ? "selected" : ""}`} onClick={() => setMethod("card")}>
-              <CreditCard size={22} />
-              <span><strong>Card</strong><small>Visa or Mastercard via secure checkout</small></span>
-              <span className="card-brands"><VisaLogo size={40} /><MastercardLogo size={30} /></span>
-            </button>
+            </div>
           </div>
           <div className="field">
             <label htmlFor="payment-phone">Phone number</label>
@@ -197,7 +185,7 @@ export default function BillingPage() {
             <span className="hint">Name: {user?.full_name || user?.email || "User"} · Email: {user?.email || "—"}</span>
           </div>
           <button type="button" className="btn btn-primary" onClick={pay} disabled={loading || phone.trim().length < 9}>
-            {loading ? <><Loader2 size={18} className="spin" /> Sending request...</> : method === "card" ? "Continue with card" : "Send payment request"}
+            {loading ? <><Loader2 size={18} className="spin" /> Sending request...</> : "Send payment request"}
           </button>
           {checkingReference && <span className="hint"><Loader2 size={13} className="spin" /> Checking payment status...</span>}
         </div>
@@ -216,7 +204,7 @@ export default function BillingPage() {
                   <tr key={order.id}>
                     <td>{new Date(order.created_at).toLocaleDateString("en-TZ")}</td>
                     <td>{order.plan}</td>
-                    <td>{order.payment_method === "card" ? "Card" : "Mobile money"}</td>
+                    <td>Mobile money</td>
                     <td>{formatAmount(order.amount)}</td>
                     <td><span className={`tag ${order.status === "paid" ? "green" : finalStatuses.includes(order.status) ? "red" : "gray"}`}>{order.status}</span></td>
                   </tr>
